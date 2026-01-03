@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пепел Спящего</title>
+
+<style>
+body {
+  margin:0;
+  background:#0f0f0f;
+  color:#e0e0e0;
+  font-family: Georgia, serif;
+}
+
+#game {
+  max-width:600px;
+  margin:auto;
+  padding:16px;
+}
+
+h1 {
+  text-align:center;
+  font-size:22px;
+  margin-bottom:10px;
+}
+
+.stats {
+  background:#1c1c1c;
+  padding:10px;
+  font-size:14px;
+  margin-bottom:12px;
+  border:1px solid #333;
+}
+
+#text {
+  white-space:pre-line;
+  font-size:16px;
+  line-height:1.4;
+  margin-bottom:16px;
+}
+
+button {
+  width:100%;
+  padding:14px;
+  margin-bottom:10px;
+  font-size:16px;
+  background:#2a2a2a;
+  color:#e0e0e0;
+  border:1px solid #444;
+  border-radius:6px;
+}
+
+button:active {
+  background:#3a3a3a;
+}
+</style>
+</head>
+
+<body>
+<div id="game">
+  <h1>Пепел Спящего</h1>
+  <div class="stats" id="stats"></div>
+  <div id="text"></div>
+  <div id="choices"></div>
+  <button onclick="newGame()">Новая игра</button>
+</div>
+
+<script>
+let player = JSON.parse(localStorage.getItem("player")) || {
+  strength:2,
+  dexterity:2,
+  charisma:1,
+  reputation:0,
+  scene:"start"
+};
+
+function save() {
+  localStorage.setItem("player", JSON.stringify(player));
+}
+
+function updateStats() {
+  document.getElementById("stats").innerText =
+  `Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma} | Репутация: ${player.reputation}`;
+}
+
+function show(text, choices) {
+  document.getElementById("text").innerText = text;
+  const c = document.getElementById("choices");
+  c.innerHTML = "";
+  choices.forEach(ch => {
+    let b = document.createElement("button");
+    b.innerText = ch.text;
+    b.onclick = () => {
+      ch.action();
+      save();
+    };
+    c.appendChild(b);
+  });
+  updateStats();
+}
+
+function newGame() {
+  localStorage.removeItem("player");
+  location.reload();
+}
+
+/* СЦЕНЫ */
+
+function start() {
+  player.scene="start";
+  show(
+`Гавань Хориниса.
+Холодный ветер с моря.
+Ты — беглец из Колонии.
+
+У складов стоит стражник.`,
+[
+  {text:"Заговорить со стражником", action:guard},
+  {text:"Осмотреть склады", action:warehouse},
+  {text:"Уйти в трущобы", action:slums}
+]);
+}
+
+function guard() {
+  let ok = player.charisma >= 2;
+  show(
+ok ?
+`— Проходи, — бурчит стражник.
+— Но я тебя запомнил.` :
+`— Документы!
+Тебя отталкивают.`
+,
+[{text:"Назад", action:start}]
+);
+  if(!ok) player.reputation--;
+}
+
+function warehouse() {
+  show(
+`Между ящиками ты находишь серый осколок.
+Он тёплый. Слишком тёплый.`,
+[
+  {text:"Взять осколок", action:takeAsh},
+  {text:"Оставить", action:start}
+]);
+}
+
+function takeAsh() {
+  player.strength++;
+  show(
+`Осколок рассыпается пеплом.
+Сила наполняет тело.
+
+Ты ещё не знаешь, что это был Пепел Спящего.`,
+[
+  {text:"Назад", action:start}
+]);
+}
+
+function slums() {
+  show(
+`Трущобы.
+Здесь не спрашивают имя.
+Здесь решают — кем ты станешь.`,
+[
+  {text:"Искать работу", action:work},
+  {text:"Назад", action:start}
+]);
+}
+
+function work() {
+  player.reputation++;
+  show(
+`Грязная работа.
+Но город начинает тебя замечать.`,
+[
+  {text:"Продолжить", action:start}
+]);
+}
+
+/* ЗАПУСК */
+start();
+</script>
+</body>
+</html>
