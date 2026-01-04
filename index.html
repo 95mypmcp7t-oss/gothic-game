@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего</title>
+<title>Пепел Спящего — v0.6</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
 
@@ -11,13 +11,12 @@
 body {
   margin:0;
   background:#000;
-  background-image:url('https://raw.githubusercontent.com/95mypmcp7t-oss/gothic-game/main/gothic_bg.jpg');
+  background-image:url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=60');
   background-size:cover;
   background-attachment:fixed;
   color:#e8d9a6;
   font-family: Georgia, serif;
 }
-
 #game {
   max-width:700px;
   margin:40px auto;
@@ -27,7 +26,6 @@ body {
   border-radius:6px;
   box-shadow:0 0 25px #000;
 }
-
 h1 {
   text-align:center;
   font-family:"Uncial Antiqua";
@@ -36,7 +34,6 @@ h1 {
   margin-top:0;
   color:#f1d27c;
 }
-
 .stats {
   background:rgba(0,0,0,0.7);
   border:2px solid #aa8844;
@@ -44,14 +41,17 @@ h1 {
   margin-bottom:12px;
   font-size:14px;
 }
-
 #text {
   white-space:pre-line;
   font-size:16px;
   line-height:1.45;
   margin-bottom:14px;
 }
-
+img.scene {
+  width:100%;
+  border-radius:6px;
+  margin-bottom:10px;
+}
 button {
   width:100%;
   padding:12px;
@@ -62,7 +62,6 @@ button {
   font-size:18px;
   border-radius:4px;
 }
-
 button:hover, button:active {
   background:#caa44a;
   color:#000;
@@ -81,31 +80,35 @@ button:hover, button:active {
 
 <script>
 let player = JSON.parse(localStorage.getItem("player")) || {
-  strength:2,
-  dexterity:2,
-  charisma:1,
-  hp:12,
-  maxhp:12,
-  weapon:"Кулаки",
-  damage:1,
-  armor:0,
-  armorName:"нет брони",
-  gold:10,
-  potions:1,
-  inventory:[],
-  quest:{rat:false, tavern:false, bandits:false},
-  reputation:0,
+ strength:3,
+ dexterity:2,
+ charisma:1,
+ hp:14,
+ maxhp:14,
+ weapon:"Кулаки",
+ damage:1,
+ armor:0,
+ armorName:"Нет брони",
+ gold:20,
+ potions:2,
+ xp:0,
+ level:1,
+ quest:{rat:false,tavern:false,cave:false},
 };
 
 function save(){localStorage.setItem("player", JSON.stringify(player));}
 function newGame(){localStorage.removeItem("player");location.reload();}
-function stat(){document.getElementById("stats").innerText=
-`HP: ${player.hp}/${player.maxhp} | Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma}
-Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor}) | Золото: ${player.gold} | Зелий: ${player.potions}`;
+function stat(){
+ document.getElementById("stats").innerText=
+`Lv ${player.level}  XP: ${player.xp}/10
+HP: ${player.hp}/${player.maxhp}
+Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma}
+Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor})
+Золото: ${player.gold} | Зелий: ${player.potions}`;
 }
 
 function show(text, choices){
- document.getElementById("text").innerText=text;
+ document.getElementById("text").innerHTML=text;
  const c=document.getElementById("choices");
  c.innerHTML="";
  choices.forEach(ch=>{
@@ -117,156 +120,172 @@ function show(text, choices){
  stat();
 }
 
-// ====== ПОЦЕЛУИ ЖИЗНИ 😎 ======
-function drinkPotion(){
- if(player.potions<=0){
-  show("У тебя нет зелий.",[{text:"Назад",action:start}]);return;
- }
- player.potions--;
- player.hp += 8;
- if(player.hp>player.maxhp) player.hp=player.maxhp;
- show("Ты выпил зелье. Тебе стало лучше.",[{text:"Назад",action:start}]);
+// ======== LEVEL UP ========
+function levelUp(){
+ if(player.xp<10) return;
+ player.xp = 0;
+ player.level++;
+ player.maxhp+=2;
+ player.hp=player.maxhp;
+
+ show(
+"Ты повышаешь уровень!\nВыбери, что усилить:",
+[
+ {text:"Сила +1",action:()=>{player.strength++;start();}},
+ {text:"Ловкость +1",action:()=>{player.dexterity++;start();}},
+ {text:"Харизма +1",action:()=>{player.charisma++;start();}}
+ ]
+);
 }
 
-// ====== БОЙ ======
-function battle(enemy, win, lose){
- if(player.hp<=0){show("Ты слишком ранен...",[{text:"Назад",action:start}]);return;}
+// ======== HEAL ========
+function drinkPotion(back=start){
+ if(player.potions<=0){
+  show("Зелий нет.",[{text:"Назад",action:back}]);return;
+ }
+ player.potions--;
+ player.hp = Math.min(player.hp+10,player.maxhp);
+ show("Ты выпиваешь зелье.",[{text:"Назад",action:back}]);
+}
 
- let hit = Math.random()>0.1; // шанс промаха врага
- let crit = Math.random()<0.2; // шанс крита героя
- let dmg = player.damage + player.strength;
- if(crit) dmg+=2;
+// ======== LOOT ========
+function loot(){
+ let rewardGold = Math.floor(Math.random()*10)+5;
+ player.gold += rewardGold;
+ if(Math.random()<0.4) player.potions++;
+ player.xp += 5;
+ levelUp();
+ return `Ты получаешь ${rewardGold} золота${Math.random()<0.4?" и зелье":""}`;
+}
 
+// ======== BATTLE ========
+function battle(enemy, win, lose, image){
+ if(player.hp<=0){show("Ты слишком ранен.",[{text:"Назад",action:start}]);return;}
+
+ let crit=Math.random()<0.2;
+ let dmg=player.damage+player.strength;
+ if(crit)dmg+=2;
  enemy.hp -= dmg;
- let text = `${enemy.name}\nHP врага: ${enemy.hp <= 0?0:enemy.hp}\n\nТы наносишь ${dmg} урона${crit? " (КРИТ!)":""}`;
 
- if(enemy.hp<=0){win();return;}
+ let text =
+`<img class="scene" src="${image}">
+${enemy.name}
+HP врага: ${enemy.hp<=0?0:enemy.hp}
+Ты наносишь ${dmg}${crit?" (КРИТ!)":""}`;
 
- let enemyHit = Math.max(enemy.damage - player.armor,0);
- if(hit){
- player.hp -= enemyHit;
- text+=`\nВраг атакует — ${enemyHit} урона`;
+ if(enemy.hp<=0){
+  let lootText = loot();
+  win(lootText);
+  return;
+ }
+
+ if(Math.random()>0.2){
+  let hit=Math.max(enemy.damage-player.armor,0);
+  player.hp-=hit;
+  text+=`\nВраг бьёт — ${hit}`;
  } else text+="\nВраг промахнулся!";
 
- if(player.hp<=0){lose();return;}
+ if(player.hp<=0){ lose(); return; }
 
  show(text,[
-  {text:"Продолжить бой",action:()=>battle(enemy,win,lose)},
-  {text:"Попробовать сбежать",action:start},
-  {text:"Выпить зелье",action:drinkPotion}
+ {text:"Бить дальше",action:()=>battle(enemy,win,lose,image)},
+ {text:"Сбежать",action:start},
+ {text:"Выпить зелье",action:()=>drinkPotion(()=>battle(enemy,win,lose,image))}
  ]);
 }
 
-// ====== ЛОКАЦИИ ======
+// ======== LOCATIONS ========
 function start(){
  show(
-`Гавань Хориниса.
-
-Мир будто чувствует напряжение.
-И это только начало...`,
+`<img class="scene" src="https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?auto=format&fit=crop&w=1200&q=60">
+Гавань Хориниса.`,
 [
- {text:"Страж у ворот",action:guard},
- {text:"Склады",action:warehouse},
- {text:"Трущобы",action:slums},
- {text:"Таверна",action:tavern},
+ {text:"Страж",action:guard},
+ {text:"Таверна (торговец)",action:tavern},
  {text:"Лес",action:forest},
- {text:"Проверить инвентарь",action:inv},
- {text:"Выпить зелье лечения",action:drinkPotion}
+ {text:"Пещера",action:cave},
+ {text:"Инвентарь",action:inv},
+ {text:"Зелье",action:()=>drinkPotion(start)}
 ]);
 }
 
-// ====== NPC + КВЕСТЫ ======
-function guard(){
- if(!player.quest.rat){
- show("— В трущобах проблемы. Убей крысу — получишь монеты.",[
-  {text:"Взять квест",action:()=>{player.quest.rat=true;start();}},
-  {text:"Уйти",action:start}
- ]);
- } 
- else if(player.quest.rat==="done"){
- player.gold+=15;
- player.reputation++;
- player.quest.rat="rewarded";
- show("— Неплохо. Вот твои монеты.",[{text:"Назад",action:start}]);
- }
- else show("— Ну так чего стоишь?",[{text:"Назад",action:start}]);
-}
-
-function warehouse(){
- show("Склады. Спокойно. Слишком спокойно.",[
- {text:"Обыскать ящики",action:()=>{
-  player.strength++;
-  show("Ты находишь Пепел. Чувствуешь силу.",[{text:"Назад",action:start}]);
+// ======== SHOP ========
+function tavern(){
+ show(
+`<img class="scene" src="https://images.unsplash.com/photo-1594394330199-5f3a91a3f5a3?auto=format&fit=crop&w=1200&q=60">
+Таверна. Здесь можно прикупить что-нибудь.`,
+[
+ {text:"Купить зелье (15 золота)",action:()=>{
+  if(player.gold>=15){player.gold-=15;player.potions++;tavern();}
+  else show("Мало золота.",[{text:"Назад",action:tavern}]);
+ }},
+ {text:"Купить меч (+2 урона) — 40 золота",action:()=>{
+  if(player.gold>=40){
+   player.gold-=40;
+   player.weapon="Боевой меч";
+   player.damage=5;
+   tavern();
+  } else show("Мало золота.",[{text:"Назад",action:tavern}]);
+ }},
+ {text:"Купить броню (2 защиты) — 40 золота",action:()=>{
+  if(player.gold>=40){
+   player.gold-=40;
+   player.armor=2;
+   player.armorName="Кожаная броня";
+   tavern();
+  } else show("Мало золота.",[{text:"Назад",action:tavern}]);
  }},
  {text:"Назад",action:start}
 ]);
 }
 
-function slums(){
- if(player.quest.rat===true){
- let rat={name:"КРЫСА",hp:6,damage:1};
- battle(rat,
- ()=>{player.quest.rat="done";show("Крыса убита.",[{text:"Назад",action:start}]);},
- ()=>{show("Ты пал...",[{text:"Заново",action:newGame}]);}
- );
+// ======== GUARD QUEST ========
+function guard(){
+ if(!player.quest.rat){
+ show("— В трущобах крысы. Разберёшься?",
+ [{text:"Берусь",action:()=>{player.quest.rat=true;slums();}},
+  {text:"Уйти",action:start}]);
  return;
  }
- show("Трущобы. Здесь выживают сильные.",[{text:"Назад",action:start}]);
-}
-
-// ====== ТАВЕРНА ======
-function tavern(){
- if(!player.quest.tavern){
- show("Хозяин таверны:\n— Бандиты в лесу грабят путников. Разберёшься?",[
-  {text:"Взять квест",action:()=>{player.quest.tavern=true;forest();}},
-  {text:"Уйти",action:start}
- ]);
- } else if(player.quest.tavern==="done"){
- player.gold+=20;
- player.potions++;
- player.quest.tavern="rewarded";
- show("— Отлично! Держи монеты и зелье. Ты нам нужен.",[{text:"Назад",action:start}]);
- } else {
- forest();
+ if(player.quest.rat==="done"){
+ player.gold+=30;
+ player.quest.rat="rewarded";
+ show("— Хорошая работа.",[{text:"Назад",action:start}]);
+ return;
  }
+ show("— Действуй.",[{text:"Назад",action:start}]);
 }
 
-// ====== ЛЕС ======
+// ======== SLUMS ========
+function slums(){
+ let rat={name:"КРЫСА-МУТАНТ",hp:10,damage:2};
+ battle(rat,
+ (loot)=>{player.quest.rat="done";show("Крыса убита.\n"+loot,[{text:"Назад",action:start}]);},
+ ()=>{show("Ты пал.",[{text:"Заново",action:newGame}]);},
+ "https://images.unsplash.com/photo-1594041680534-e8c8bfc0b2ef?auto=format&fit=crop&w=1200&q=60"
+ );
+}
+
+// ======== FOREST ========
 function forest(){
- show("Лес. Здесь опасно.",[
- {text:"Искать неприятности",action:forestFight},
- {text:"Назад",action:start}
-]);
-}
-
-function forestFight(){
- if(player.quest.tavern){
- let bandit={name:"БАНДИТ",hp:14,damage:3};
- battle(bandit,
- ()=>{
-  player.weapon="Охотничий меч";
-  player.damage=4;
-  player.armor=1;
-  player.armorName="Лёгкая кожаная броня";
-  player.quest.tavern="done";
-  show("Бандит повержен. Ты находишь меч и броню.",[{text:"Назад",action:start}]);
- },
- ()=>{show("Тебя порезали как салагу...",[{text:"Заново",action:newGame}]);}
- );
- } else {
- let wolf={name:"ВОЛК",hp:12,damage:2};
+ let wolf={name:"СЕРЫЙ ВОЛК",hp:14,damage:3};
  battle(wolf,
- ()=>{
-  player.gold+=10;
-  player.potions++;
-  show("Ты победил волка и находишь зелье.",[{text:"Назад",action:start}]);
- },
- ()=>{show("Волк разорвал тебя...",[{text:"Заново",action:newGame}]);}
+ (loot)=>{show("Ты побеждаешь волка.\n"+loot,[{text:"Назад",action:start}]);},
+ ()=>{show("Тебя разорвали...",[{text:"Заново",action:newGame}]);},
+ "https://images.unsplash.com/photo-1605276374104-dee2a9c1540b?auto=format&fit=crop&w=1200&q=60"
  );
- }
 }
 
-// ====== ИНВЕНТАРЬ ======
+// ======== CAVE ========
+function cave(){
+ let beast={name:"ТЕНЕВОЕ СУЩЕСТВО",hp:24,damage:5};
+ battle(beast,
+ (loot)=>{player.quest.cave=true;show("Ты победил тварь.\n"+loot,[{text:"Назад",action:start}]);},
+ ()=>{show("Тьма поглотила тебя.",[{text:"Заново",action:newGame}]);},
+ "https://images.unsplash.com/photo-1604076850742-4c7221e4a868?auto=format&fit=crop&w=1200&q=60"
+ );
+}
+
 function inv(){
  show(
 `Инвентарь:
@@ -282,4 +301,3 @@ start();
 </script>
 </body>
 </html>
-
