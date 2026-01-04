@@ -84,13 +84,16 @@ let player = JSON.parse(localStorage.getItem("player")) || {
   strength:2,
   dexterity:2,
   charisma:1,
-  hp:10,
-  maxhp:10,
+  hp:12,
+  maxhp:12,
   weapon:"Кулаки",
   damage:1,
-  gold:5,
+  armor:0,
+  armorName:"нет брони",
+  gold:10,
+  potions:1,
   inventory:[],
-  quest:{rat:false, ash:false},
+  quest:{rat:false, tavern:false, bandits:false},
   reputation:0,
 };
 
@@ -98,7 +101,7 @@ function save(){localStorage.setItem("player", JSON.stringify(player));}
 function newGame(){localStorage.removeItem("player");location.reload();}
 function stat(){document.getElementById("stats").innerText=
 `HP: ${player.hp}/${player.maxhp} | Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma}
-Оружие: ${player.weapon} (${player.damage} урон) | Золото: ${player.gold} | Репутация: ${player.reputation}`;
+Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor}) | Золото: ${player.gold} | Зелий: ${player.potions}`;
 }
 
 function show(text, choices){
@@ -114,77 +117,86 @@ function show(text, choices){
  stat();
 }
 
-// БОЙ
+// ====== ПОЦЕЛУИ ЖИЗНИ 😎 ======
+function drinkPotion(){
+ if(player.potions<=0){
+  show("У тебя нет зелий.",[{text:"Назад",action:start}]);return;
+ }
+ player.potions--;
+ player.hp += 8;
+ if(player.hp>player.maxhp) player.hp=player.maxhp;
+ show("Ты выпил зелье. Тебе стало лучше.",[{text:"Назад",action:start}]);
+}
+
+// ====== БОЙ ======
 function battle(enemy, win, lose){
- if(player.hp<=0){show(`Ты ранен и не можешь драться.`,[{text:"Назад",action:start}]);return;}
- let text =
-`${enemy.name}
-HP: ${enemy.hp}
+ if(player.hp<=0){show("Ты слишком ранен...",[{text:"Назад",action:start}]);return;}
 
-Ты атакуешь — наносишь ${player.damage + player.strength} урона
-Противник отвечает — ${enemy.damage} урона`;
- enemy.hp -= (player.damage + player.strength);
- player.hp -= enemy.damage;
+ let hit = Math.random()>0.1; // шанс промаха врага
+ let crit = Math.random()<0.2; // шанс крита героя
+ let dmg = player.damage + player.strength;
+ if(crit) dmg+=2;
 
- if(enemy.hp<=0){
-  win();
-  return;
- }
- if(player.hp<=0){
-  lose();
-  return;
- }
+ enemy.hp -= dmg;
+ let text = `${enemy.name}\nHP врага: ${enemy.hp <= 0?0:enemy.hp}\n\nТы наносишь ${dmg} урона${crit? " (КРИТ!)":""}`;
+
+ if(enemy.hp<=0){win();return;}
+
+ let enemyHit = Math.max(enemy.damage - player.armor,0);
+ if(hit){
+ player.hp -= enemyHit;
+ text+=`\nВраг атакует — ${enemyHit} урона`;
+ } else text+="\nВраг промахнулся!";
+
+ if(player.hp<=0){lose();return;}
 
  show(text,[
   {text:"Продолжить бой",action:()=>battle(enemy,win,lose)},
-  {text:"Попробовать сбежать",action:start}
+  {text:"Попробовать сбежать",action:start},
+  {text:"Выпить зелье",action:drinkPotion}
  ]);
 }
 
-// ЛОКАЦИИ
+// ====== ЛОКАЦИИ ======
 function start(){
  show(
 `Гавань Хориниса.
-Город живёт своей тревожной жизнью.
 
-Куда ты направишься?`,
+Мир будто чувствует напряжение.
+И это только начало...`,
 [
  {text:"Страж у ворот",action:guard},
  {text:"Склады",action:warehouse},
  {text:"Трущобы",action:slums},
- {text:"Лес за городом",action:forest},
- {text:"Проверить инвентарь",action:inv}
+ {text:"Таверна",action:tavern},
+ {text:"Лес",action:forest},
+ {text:"Проверить инвентарь",action:inv},
+ {text:"Выпить зелье лечения",action:drinkPotion}
 ]);
 }
 
-// NPC + КВЕСТЫ
+// ====== NPC + КВЕСТЫ ======
 function guard(){
  if(!player.quest.rat){
- show(`Стражник:
-— В трущобах крысы расплодились. Убьёшь одну — заплачу.`,
- [
+ show("— В трущобах проблемы. Убей крысу — получишь монеты.",[
   {text:"Взять квест",action:()=>{player.quest.rat=true;start();}},
   {text:"Уйти",action:start}
  ]);
- } else if(player.quest.rat==="done"){
- player.gold+=10;
+ } 
+ else if(player.quest.rat==="done"){
+ player.gold+=15;
  player.reputation++;
  player.quest.rat="rewarded";
- show(`— Неплохо.
-Вот твои монеты.`,[{text:"Назад",action:start}]);
- } else show(`— Чего ты ждёшь?`,[{text:"Назад",action:start}]);
+ show("— Неплохо. Вот твои монеты.",[{text:"Назад",action:start}]);
+ }
+ else show("— Ну так чего стоишь?",[{text:"Назад",action:start}]);
 }
 
 function warehouse(){
- show(
-`Склады.
-Тусклый свет факелов.
-
-Между ящиков блестит что-то...`,
-[
- {text:"Обыскать",action:()=>{
+ show("Склады. Спокойно. Слишком спокойно.",[
+ {text:"Обыскать ящики",action:()=>{
   player.strength++;
-  show("Ты находишь осколок Пепла. Он усилил тебя.",[{text:"Назад",action:start}]);
+  show("Ты находишь Пепел. Чувствуешь силу.",[{text:"Назад",action:start}]);
  }},
  {text:"Назад",action:start}
 ]);
@@ -192,55 +204,76 @@ function warehouse(){
 
 function slums(){
  if(player.quest.rat===true){
- let rat={name:"КРЫСА",hp:5,damage:1};
+ let rat={name:"КРЫСА",hp:6,damage:1};
  battle(rat,
  ()=>{player.quest.rat="done";show("Крыса убита.",[{text:"Назад",action:start}]);},
- ()=>{show("Ты пал...",[{text:"Начать заново",action:newGame}]);}
+ ()=>{show("Ты пал...",[{text:"Заново",action:newGame}]);}
  );
  return;
  }
-
- show(
-`Трущобы.
-Здесь тебя никто не ждёт.`,
-[
- {text:"Поговорить с нищим",action:()=>{
-  show("— Ты не из здешних... будь осторожен...",[{text:"Назад",action:start}]);
- }},
- {text:"Назад",action:start}
-]);
+ show("Трущобы. Здесь выживают сильные.",[{text:"Назад",action:start}]);
 }
 
+// ====== ТАВЕРНА ======
+function tavern(){
+ if(!player.quest.tavern){
+ show("Хозяин таверны:\n— Бандиты в лесу грабят путников. Разберёшься?",[
+  {text:"Взять квест",action:()=>{player.quest.tavern=true;forest();}},
+  {text:"Уйти",action:start}
+ ]);
+ } else if(player.quest.tavern==="done"){
+ player.gold+=20;
+ player.potions++;
+ player.quest.tavern="rewarded";
+ show("— Отлично! Держи монеты и зелье. Ты нам нужен.",[{text:"Назад",action:start}]);
+ } else {
+ forest();
+ }
+}
+
+// ====== ЛЕС ======
 function forest(){
- show(
-`Лес.
-Тихо. Опасно.
-
-Кто-то рядом...`,
-[
- {text:"Искать добычу",action:wolfFight},
+ show("Лес. Здесь опасно.",[
+ {text:"Искать неприятности",action:forestFight},
  {text:"Назад",action:start}
 ]);
 }
 
-function wolfFight(){
+function forestFight(){
+ if(player.quest.tavern){
+ let bandit={name:"БАНДИТ",hp:14,damage:3};
+ battle(bandit,
+ ()=>{
+  player.weapon="Охотничий меч";
+  player.damage=4;
+  player.armor=1;
+  player.armorName="Лёгкая кожаная броня";
+  player.quest.tavern="done";
+  show("Бандит повержен. Ты находишь меч и броню.",[{text:"Назад",action:start}]);
+ },
+ ()=>{show("Тебя порезали как салагу...",[{text:"Заново",action:newGame}]);}
+ );
+ } else {
  let wolf={name:"ВОЛК",hp:12,damage:2};
  battle(wolf,
  ()=>{
-  player.gold+=15;
-  player.weapon="Ржавый меч";
-  player.damage=3;
-  show("Ты победил волка.\nТы находишь Ржавый меч.",[{text:"Назад",action:start}]);
+  player.gold+=10;
+  player.potions++;
+  show("Ты победил волка и находишь зелье.",[{text:"Назад",action:start}]);
  },
- ()=>{show("Волк разорвал тебя...",[{text:"Начать заново",action:newGame}]);}
-);
+ ()=>{show("Волк разорвал тебя...",[{text:"Заново",action:newGame}]);}
+ );
+ }
 }
 
+// ====== ИНВЕНТАРЬ ======
 function inv(){
  show(
 `Инвентарь:
 Оружие: ${player.weapon}
-Золото: ${player.gold}`,
+Броня: ${player.armorName}
+Золото: ${player.gold}
+Зелий: ${player.potions}`,
 [{text:"Назад",action:start}]
 );
 }
@@ -249,3 +282,4 @@ start();
 </script>
 </body>
 </html>
+
