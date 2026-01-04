@@ -5,54 +5,67 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Пепел Спящего</title>
 
+<link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+
 <style>
 body {
   margin:0;
-  background:#0f0f0f;
-  color:#e0e0e0;
+  background:#000;
+  background-image:url('https://raw.githubusercontent.com/95mypmcp7t-oss/gothic-game/main/gothic_bg.jpg');
+  background-size:cover;
+  background-attachment:fixed;
+  color:#e8d9a6;
   font-family: Georgia, serif;
 }
 
 #game {
-  max-width:600px;
-  margin:auto;
-  padding:16px;
+  max-width:700px;
+  margin:40px auto;
+  padding:18px;
+  background:rgba(0,0,0,0.82);
+  border:3px solid #caa44a;
+  border-radius:6px;
+  box-shadow:0 0 25px #000;
 }
 
 h1 {
   text-align:center;
-  font-size:22px;
-  margin-bottom:10px;
+  font-family:"Uncial Antiqua";
+  letter-spacing:2px;
+  font-size:24px;
+  margin-top:0;
+  color:#f1d27c;
 }
 
 .stats {
-  background:#1c1c1c;
+  background:rgba(0,0,0,0.7);
+  border:2px solid #aa8844;
   padding:10px;
-  font-size:14px;
   margin-bottom:12px;
-  border:1px solid #333;
+  font-size:14px;
 }
 
 #text {
   white-space:pre-line;
   font-size:16px;
-  line-height:1.4;
-  margin-bottom:16px;
+  line-height:1.45;
+  margin-bottom:14px;
 }
 
 button {
   width:100%;
-  padding:14px;
-  margin-bottom:10px;
-  font-size:16px;
-  background:#2a2a2a;
-  color:#e0e0e0;
-  border:1px solid #444;
-  border-radius:6px;
+  padding:12px;
+  margin-top:8px;
+  background:rgba(0,0,0,0.4);
+  border:2px solid #caa44a;
+  color:#e8d9a6;
+  font-size:18px;
+  border-radius:4px;
 }
 
-button:active {
-  background:#3a3a3a;
+button:hover, button:active {
+  background:#caa44a;
+  color:#000;
 }
 </style>
 </head>
@@ -71,115 +84,167 @@ let player = JSON.parse(localStorage.getItem("player")) || {
   strength:2,
   dexterity:2,
   charisma:1,
+  hp:10,
+  maxhp:10,
+  weapon:"Кулаки",
+  damage:1,
+  gold:5,
+  inventory:[],
+  quest:{rat:false, ash:false},
   reputation:0,
-  scene:"start"
 };
 
-function save() {
-  localStorage.setItem("player", JSON.stringify(player));
+function save(){localStorage.setItem("player", JSON.stringify(player));}
+function newGame(){localStorage.removeItem("player");location.reload();}
+function stat(){document.getElementById("stats").innerText=
+`HP: ${player.hp}/${player.maxhp} | Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma}
+Оружие: ${player.weapon} (${player.damage} урон) | Золото: ${player.gold} | Репутация: ${player.reputation}`;
 }
 
-function updateStats() {
-  document.getElementById("stats").innerText =
-  `Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma} | Репутация: ${player.reputation}`;
+function show(text, choices){
+ document.getElementById("text").innerText=text;
+ const c=document.getElementById("choices");
+ c.innerHTML="";
+ choices.forEach(ch=>{
+ let b=document.createElement("button");
+ b.innerText=ch.text;
+ b.onclick=()=>{ch.action();save();};
+ c.appendChild(b);
+ });
+ stat();
 }
 
-function show(text, choices) {
-  document.getElementById("text").innerText = text;
-  const c = document.getElementById("choices");
-  c.innerHTML = "";
-  choices.forEach(ch => {
-    let b = document.createElement("button");
-    b.innerText = ch.text;
-    b.onclick = () => {
-      ch.action();
-      save();
-    };
-    c.appendChild(b);
-  });
-  updateStats();
+// БОЙ
+function battle(enemy, win, lose){
+ if(player.hp<=0){show(`Ты ранен и не можешь драться.`,[{text:"Назад",action:start}]);return;}
+ let text =
+`${enemy.name}
+HP: ${enemy.hp}
+
+Ты атакуешь — наносишь ${player.damage + player.strength} урона
+Противник отвечает — ${enemy.damage} урона`;
+ enemy.hp -= (player.damage + player.strength);
+ player.hp -= enemy.damage;
+
+ if(enemy.hp<=0){
+  win();
+  return;
+ }
+ if(player.hp<=0){
+  lose();
+  return;
+ }
+
+ show(text,[
+  {text:"Продолжить бой",action:()=>battle(enemy,win,lose)},
+  {text:"Попробовать сбежать",action:start}
+ ]);
 }
 
-function newGame() {
-  localStorage.removeItem("player");
-  location.reload();
-}
-
-/* СЦЕНЫ */
-
-function start() {
-  player.scene="start";
-  show(
+// ЛОКАЦИИ
+function start(){
+ show(
 `Гавань Хориниса.
-Холодный ветер с моря.
-Ты — беглец из Колонии.
+Город живёт своей тревожной жизнью.
 
-У складов стоит стражник.`,
+Куда ты направишься?`,
 [
-  {text:"Заговорить со стражником", action:guard},
-  {text:"Осмотреть склады", action:warehouse},
-  {text:"Уйти в трущобы", action:slums}
+ {text:"Страж у ворот",action:guard},
+ {text:"Склады",action:warehouse},
+ {text:"Трущобы",action:slums},
+ {text:"Лес за городом",action:forest},
+ {text:"Проверить инвентарь",action:inv}
 ]);
 }
 
-function guard() {
-  let ok = player.charisma >= 2;
-  show(
-ok ?
-`— Проходи, — бурчит стражник.
-— Но я тебя запомнил.` :
-`— Документы!
-Тебя отталкивают.`
-,
-[{text:"Назад", action:start}]
-);
-  if(!ok) player.reputation--;
+// NPC + КВЕСТЫ
+function guard(){
+ if(!player.quest.rat){
+ show(`Стражник:
+— В трущобах крысы расплодились. Убьёшь одну — заплачу.`,
+ [
+  {text:"Взять квест",action:()=>{player.quest.rat=true;start();}},
+  {text:"Уйти",action:start}
+ ]);
+ } else if(player.quest.rat==="done"){
+ player.gold+=10;
+ player.reputation++;
+ player.quest.rat="rewarded";
+ show(`— Неплохо.
+Вот твои монеты.`,[{text:"Назад",action:start}]);
+ } else show(`— Чего ты ждёшь?`,[{text:"Назад",action:start}]);
 }
 
-function warehouse() {
-  show(
-`Между ящиками ты находишь серый осколок.
-Он тёплый. Слишком тёплый.`,
+function warehouse(){
+ show(
+`Склады.
+Тусклый свет факелов.
+
+Между ящиков блестит что-то...`,
 [
-  {text:"Взять осколок", action:takeAsh},
-  {text:"Оставить", action:start}
-]);
-}
-
-function takeAsh() {
+ {text:"Обыскать",action:()=>{
   player.strength++;
-  show(
-`Осколок рассыпается пеплом.
-Сила наполняет тело.
-
-Ты ещё не знаешь, что это был Пепел Спящего.`,
-[
-  {text:"Назад", action:start}
+  show("Ты находишь осколок Пепла. Он усилил тебя.",[{text:"Назад",action:start}]);
+ }},
+ {text:"Назад",action:start}
 ]);
 }
 
-function slums() {
-  show(
+function slums(){
+ if(player.quest.rat===true){
+ let rat={name:"КРЫСА",hp:5,damage:1};
+ battle(rat,
+ ()=>{player.quest.rat="done";show("Крыса убита.",[{text:"Назад",action:start}]);},
+ ()=>{show("Ты пал...",[{text:"Начать заново",action:newGame}]);}
+ );
+ return;
+ }
+
+ show(
 `Трущобы.
-Здесь не спрашивают имя.
-Здесь решают — кем ты станешь.`,
+Здесь тебя никто не ждёт.`,
 [
-  {text:"Искать работу", action:work},
-  {text:"Назад", action:start}
+ {text:"Поговорить с нищим",action:()=>{
+  show("— Ты не из здешних... будь осторожен...",[{text:"Назад",action:start}]);
+ }},
+ {text:"Назад",action:start}
 ]);
 }
 
-function work() {
-  player.reputation++;
-  show(
-`Грязная работа.
-Но город начинает тебя замечать.`,
+function forest(){
+ show(
+`Лес.
+Тихо. Опасно.
+
+Кто-то рядом...`,
 [
-  {text:"Продолжить", action:start}
+ {text:"Искать добычу",action:wolfFight},
+ {text:"Назад",action:start}
 ]);
 }
 
-/* ЗАПУСК */
+function wolfFight(){
+ let wolf={name:"ВОЛК",hp:12,damage:2};
+ battle(wolf,
+ ()=>{
+  player.gold+=15;
+  player.weapon="Ржавый меч";
+  player.damage=3;
+  show("Ты победил волка.\nТы находишь Ржавый меч.",[{text:"Назад",action:start}]);
+ },
+ ()=>{show("Волк разорвал тебя...",[{text:"Начать заново",action:newGame}]);}
+);
+}
+
+function inv(){
+ show(
+`Инвентарь:
+Оружие: ${player.weapon}
+Золото: ${player.gold}`,
+[{text:"Назад",action:start}]
+);
+}
+
 start();
 </script>
 </body>
