@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего — v0.6</title>
+<title>Пепел Спящего — v0.8</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
 
@@ -11,7 +11,7 @@
 body {
   margin:0;
   background:#000;
-  background-image:url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=60');
+  background-image:url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=60');
   background-size:cover;
   background-attachment:fixed;
   color:#e8d9a6;
@@ -83,16 +83,18 @@ let player = JSON.parse(localStorage.getItem("player")) || {
  strength:3,
  dexterity:2,
  charisma:1,
- hp:14,
- maxhp:14,
+ hp:16,
+ maxhp:16,
  weapon:"Кулаки",
  damage:1,
  armor:0,
  armorName:"Нет брони",
- gold:20,
+ gold:30,
  potions:2,
  xp:0,
  level:1,
+ guild:null,
+ mats:{skin:0,fang:0,ore:0,ash:0},
  quest:{rat:false,tavern:false,cave:false},
 };
 
@@ -100,11 +102,12 @@ function save(){localStorage.setItem("player", JSON.stringify(player));}
 function newGame(){localStorage.removeItem("player");location.reload();}
 function stat(){
  document.getElementById("stats").innerText=
-`Lv ${player.level}  XP: ${player.xp}/10
+`Lv ${player.level} XP: ${player.xp}/10 | Гильдия: ${player.guild ? player.guild : "нет"}
 HP: ${player.hp}/${player.maxhp}
-Сила: ${player.strength} | Ловкость: ${player.dexterity} | Харизма: ${player.charisma}
-Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor})
-Золото: ${player.gold} | Зелий: ${player.potions}`;
+Сила ${player.strength} | Ловкость ${player.dexterity} | Харизма ${player.charisma}
+Оружие ${player.weapon} (${player.damage}) | Броня ${player.armorName} (${player.armor})
+Золото ${player.gold} | Зелий ${player.potions}
+Материалы: Кожа:${player.mats.skin} Клыки:${player.mats.fang} Руда:${player.mats.ore} Пепел:${player.mats.ash}`;
 }
 
 function show(text, choices){
@@ -120,179 +123,218 @@ function show(text, choices){
  stat();
 }
 
-// ======== LEVEL UP ========
+// LEVEL
 function levelUp(){
- if(player.xp<10) return;
- player.xp = 0;
+ if(player.xp<10)return;
  player.level++;
+ player.xp=0;
  player.maxhp+=2;
  player.hp=player.maxhp;
-
- show(
-"Ты повышаешь уровень!\nВыбери, что усилить:",
-[
- {text:"Сила +1",action:()=>{player.strength++;start();}},
- {text:"Ловкость +1",action:()=>{player.dexterity++;start();}},
- {text:"Харизма +1",action:()=>{player.charisma++;start();}}
- ]
-);
+ show("Ты чувствуешь как становишься сильнее!",[
+  {text:"Сила +1",action:()=>{player.strength++;start();}},
+  {text:"Ловкость +1",action:()=>{player.dexterity++;start();}},
+  {text:"Харизма +1",action:()=>{player.charisma++;start();}}
+ ]);
 }
 
-// ======== HEAL ========
-function drinkPotion(back=start){
- if(player.potions<=0){
-  show("Зелий нет.",[{text:"Назад",action:back}]);return;
- }
+// HEAL
+function potion(back=start){
+ if(player.potions<=0){show("Зелий нет.",[{text:"Назад",action:back}]);return;}
  player.potions--;
- player.hp = Math.min(player.hp+10,player.maxhp);
+ player.hp=Math.min(player.hp+12,player.maxhp);
  show("Ты выпиваешь зелье.",[{text:"Назад",action:back}]);
 }
 
-// ======== LOOT ========
-function loot(){
- let rewardGold = Math.floor(Math.random()*10)+5;
- player.gold += rewardGold;
+// LOOT
+function loot(type){
+ player.gold += Math.floor(Math.random()*10)+5;
+ player.xp+=5;
  if(Math.random()<0.4) player.potions++;
- player.xp += 5;
+
+ if(type==="wolf") player.mats.skin++;
+ if(type==="wolf") player.mats.fang++;
+ if(type==="bandit") player.mats.ore++;
+ if(type==="beast") player.mats.ash++;
+
  levelUp();
- return `Ты получаешь ${rewardGold} золота${Math.random()<0.4?" и зелье":""}`;
 }
 
-// ======== BATTLE ========
-function battle(enemy, win, lose, image){
- if(player.hp<=0){show("Ты слишком ранен.",[{text:"Назад",action:start}]);return;}
+// BATTLE
+function battle(enemy,img,onWin){
+ if(player.hp<=0){show("Ты слишком ранен…",[ {text:"Назад",action:start} ]);return;}
 
  let crit=Math.random()<0.2;
  let dmg=player.damage+player.strength;
  if(crit)dmg+=2;
- enemy.hp -= dmg;
+ enemy.hp-=dmg;
 
- let text =
-`<img class="scene" src="${image}">
+ let t =
+`<img class="scene" src="${img}">
 ${enemy.name}
-HP врага: ${enemy.hp<=0?0:enemy.hp}
-Ты наносишь ${dmg}${crit?" (КРИТ!)":""}`;
+HP: ${enemy.hp<=0?0:enemy.hp}
+Ты бьешь на ${dmg}${crit?" (КРИТ!)":""}`;
 
- if(enemy.hp<=0){
-  let lootText = loot();
-  win(lootText);
-  return;
- }
+ if(enemy.hp<=0){ onWin();return;}
 
  if(Math.random()>0.2){
   let hit=Math.max(enemy.damage-player.armor,0);
   player.hp-=hit;
-  text+=`\nВраг бьёт — ${hit}`;
- } else text+="\nВраг промахнулся!";
+  t+=`\nВраг бьет — ${hit}`;
+ } else t+="\nВраг промахнулся";
 
- if(player.hp<=0){ lose(); return; }
+ if(player.hp<=0){
+  show("Ты пал…",[ {text:"Заново",action:newGame} ]);
+  return;
+ }
 
- show(text,[
- {text:"Бить дальше",action:()=>battle(enemy,win,lose,image)},
- {text:"Сбежать",action:start},
- {text:"Выпить зелье",action:()=>drinkPotion(()=>battle(enemy,win,lose,image))}
+ show(t,[
+  {text:"Продолжить бой",action:()=>battle(enemy,img,onWin)},
+  {text:"Сбежать",action:start},
+  {text:"Зелье",action:()=>potion(()=>battle(enemy,img,onWin))}
  ]);
 }
 
-// ======== LOCATIONS ========
+// MAIN CITY
 function start(){
  show(
-`<img class="scene" src="https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?auto=format&fit=crop&w=1200&q=60">
-Гавань Хориниса.`,
+`<img class="scene" src="https://images.unsplash.com/photo-1614854262340-9f51e96f7f04?auto=format&fit=crop&w=1200&q=60">
+Старый портовый город. Ветер несет соль и тревогу.`,
 [
- {text:"Страж",action:guard},
- {text:"Таверна (торговец)",action:tavern},
- {text:"Лес",action:forest},
+ {text:"Город",action:city},
+ {text:"Лес (охота)",action:hunt},
  {text:"Пещера",action:cave},
- {text:"Инвентарь",action:inv},
- {text:"Зелье",action:()=>drinkPotion(start)}
+ {text:"Таверна / Торговля",action:shop},
+ {text:"Гильдии",action:guild},
+ {text:"Выпить зелье",action:()=>potion(start)}
 ]);
 }
 
-// ======== SHOP ========
-function tavern(){
+// CITY
+function city(){
  show(
-`<img class="scene" src="https://images.unsplash.com/photo-1594394330199-5f3a91a3f5a3?auto=format&fit=crop&w=1200&q=60">
-Таверна. Здесь можно прикупить что-нибудь.`,
+`<img class="scene" src="https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?auto=format&fit=crop&w=1200&q=60">
+Каменные стены, тяжелые взгляды стражи. Здесь всё серьезно.`,
 [
- {text:"Купить зелье (15 золота)",action:()=>{
-  if(player.gold>=15){player.gold-=15;player.potions++;tavern();}
-  else show("Мало золота.",[{text:"Назад",action:tavern}]);
+ {text:"Поговорить со стражей",action:guard},
+ {text:"Вернуться",action:start}
+]);
+}
+
+// SHOP
+function shop(){
+ show(
+`<img class="scene" src="https://images.unsplash.com/photo-1592840065843-9c61a1a39aea?auto=format&fit=crop&w=1200&q=60">
+Старый торговец смотрит внимательно.
+— Тебе что-то нужно?`,
+[
+ {text:"Зелье — 15 золота",action:()=>{
+  if(player.gold>=15){player.gold-=15;player.potions++;shop();}
+  else show("Мало золота.",[{text:"Назад",action:shop}]);
  }},
- {text:"Купить меч (+2 урона) — 40 золота",action:()=>{
-  if(player.gold>=40){
-   player.gold-=40;
-   player.weapon="Боевой меч";
-   player.damage=5;
-   tavern();
-  } else show("Мало золота.",[{text:"Назад",action:tavern}]);
+ {text:"Меч +2 урона — 50 золота",action:()=>{
+  if(player.gold>=50){player.gold-=50;player.weapon="Боевой меч";player.damage=5;shop();}
+  else show("Мало золота.",[{text:"Назад",action:shop}]);
  }},
- {text:"Купить броню (2 защиты) — 40 золота",action:()=>{
-  if(player.gold>=40){
-   player.gold-=40;
-   player.armor=2;
-   player.armorName="Кожаная броня";
-   tavern();
-  } else show("Мало золота.",[{text:"Назад",action:tavern}]);
+ {text:"Броня 2 защиты — 50 золота",action:()=>{
+  if(player.gold>=50){player.gold-=50;player.armor=2;player.armorName="Усиленная кожа";shop();}
+  else show("Мало золота.",[{text:"Назад",action:shop}]);
  }},
+ {text:"Продать материалы",action:sell},
  {text:"Назад",action:start}
 ]);
 }
 
-// ======== GUARD QUEST ========
+// SELL
+function sell(){
+ let profit = player.mats.skin*5 + player.mats.fang*5 + player.mats.ore*8 + player.mats.ash*15;
+ player.gold+=profit;
+ player.mats={skin:0,fang:0,ore:0,ash:0};
+ show("Ты продаешь всё и получаешь "+profit+" золота.",[{text:"Назад",action:shop}]);
+}
+
+// HUNTING
+function hunt(){
+ show(
+`<img class="scene" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=60">
+Лес тяжелый и опасный.`,
+[
+ {text:"Охотиться на волков",action:wolf},
+ {text:"Искать бандитов",action:bandit},
+ {text:"Назад",action:start}
+]);
+}
+
+function wolf(){
+ let e={name:"Серый хищник",hp:14,damage:3};
+ battle(e,
+ "https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
+ ()=>{loot("wolf");show("Ты добыл шкуры и клыки.",[{text:"Назад",action:start}]);}
+ );
+}
+
+function bandit(){
+ let e={name:"Лесной бандит",hp:18,damage:4};
+ battle(e,
+ "https://images.unsplash.com/photo-1558981033-113a99c2d3b5?auto=format&fit=crop&w=1200&q=60",
+ ()=>{loot("bandit");show("Бандит повержен. Ты находишь добычу.",[{text:"Назад",action:start}]);}
+ );
+}
+
+// CAVE
+function cave(){
+ let e={name:"Тварь из тумана",hp:26,damage:6};
+ battle(e,
+ "https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
+ ()=>{loot("beast");show("Тьма шепчет твоё имя…",{text:"Назад",action:start});}
+ );
+}
+
+// GUILDS
+function guild(){
+ if(player.guild){
+ show("Ты уже состоишь в гильдии: "+player.guild,[{text:"Назад",action:start}]);
+ return;
+ }
+
+ show(
+`<img class="scene" src="https://images.unsplash.com/photo-1547314036-b6a7c54a43a7?auto=format&fit=crop&w=1200&q=60">
+Залы власти и тайных союзов. К кому примкнёшь?`,
+[
+ {text:"Охотники",action:()=>{player.guild="Охотник";player.dexterity++;start();}},
+ {text:"Городская стража",action:()=>{player.guild="Страж";player.strength++;player.armor++;start();}},
+ {text:"Тайный Орден Пепла",action:()=>{player.guild="Орден Пепла";player.weapon="Рунический клинок";player.damage+=2;start();}},
+ {text:"Назад",action:start}
+]);
+}
+
+// GUARD QUEST
 function guard(){
  if(!player.quest.rat){
- show("— В трущобах крысы. Разберёшься?",
- [{text:"Берусь",action:()=>{player.quest.rat=true;slums();}},
-  {text:"Уйти",action:start}]);
+ show("— В старых кварталах появились твари. Разберёшься?",[
+  {text:"Берусь",action:ratQuest},
+  {text:"Назад",action:start}
+ ]);
  return;
  }
- if(player.quest.rat==="done"){
- player.gold+=30;
- player.quest.rat="rewarded";
- show("— Хорошая работа.",[{text:"Назад",action:start}]);
- return;
- }
- show("— Действуй.",[{text:"Назад",action:start}]);
+ show("— Работа выполнена.",[{text:"Назад",action:start}]);
 }
 
-// ======== SLUMS ========
-function slums(){
- let rat={name:"КРЫСА-МУТАНТ",hp:10,damage:2};
- battle(rat,
- (loot)=>{player.quest.rat="done";show("Крыса убита.\n"+loot,[{text:"Назад",action:start}]);},
- ()=>{show("Ты пал.",[{text:"Заново",action:newGame}]);},
- "https://images.unsplash.com/photo-1594041680534-e8c8bfc0b2ef?auto=format&fit=crop&w=1200&q=60"
+function ratQuest(){
+ let e={name:"Гнилой зверь",hp:12,damage:3};
+ battle(e,
+ "https://images.unsplash.com/photo-1610465299996-8ad13cf5df76?auto=format&fit=crop&w=1200&q=60",
+ ()=>{player.gold+=40;player.quest.rat=true;show("Город стал чуть безопаснее.",[{text:"Назад",action:start}]);}
  );
 }
 
-// ======== FOREST ========
-function forest(){
- let wolf={name:"СЕРЫЙ ВОЛК",hp:14,damage:3};
- battle(wolf,
- (loot)=>{show("Ты побеждаешь волка.\n"+loot,[{text:"Назад",action:start}]);},
- ()=>{show("Тебя разорвали...",[{text:"Заново",action:newGame}]);},
- "https://images.unsplash.com/photo-1605276374104-dee2a9c1540b?auto=format&fit=crop&w=1200&q=60"
- );
-}
-
-// ======== CAVE ========
-function cave(){
- let beast={name:"ТЕНЕВОЕ СУЩЕСТВО",hp:24,damage:5};
- battle(beast,
- (loot)=>{player.quest.cave=true;show("Ты победил тварь.\n"+loot,[{text:"Назад",action:start}]);},
- ()=>{show("Тьма поглотила тебя.",[{text:"Заново",action:newGame}]);},
- "https://images.unsplash.com/photo-1604076850742-4c7221e4a868?auto=format&fit=crop&w=1200&q=60"
- );
-}
-
+// INV
 function inv(){
  show(
 `Инвентарь:
-Оружие: ${player.weapon}
-Броня: ${player.armorName}
-Золото: ${player.gold}
-Зелий: ${player.potions}`,
+Оружие ${player.weapon}
+Броня ${player.armorName}
+Золото ${player.gold}
+Зелий ${player.potions}`,
 [{text:"Назад",action:start}]
 );
 }
