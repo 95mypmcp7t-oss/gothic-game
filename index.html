@@ -3,14 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего — v1.4 (Сюжет судьбы)</title>
+<title>Пепел Спящего — v1.41 Stable</title>
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
+
 <style>
 body{margin:0;background:#000;color:#e8d9a6;font-family:Georgia,serif}
-#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 28px #000}
-h1{text-align:center;font-family:"Uncial Antiqua";letter-spacing:2px;font-size:26px;color:#f1d27c}
+#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);
+border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 25px #000}
+h1{text-align:center;font-family:"Uncial Antiqua";color:#f1d27c;font-size:26px}
 .stats{background:rgba(0,0,0,.7);border:2px solid #aa8844;padding:10px;margin-bottom:12px;font-size:14px}
-#text{white-space:pre-line;font-size:16px;line-height:1.5;margin-bottom:14px}
+#text{white-space:pre-line;font-size:16px;line-height:1.45;margin-bottom:14px}
 img.scene{width:100%;border-radius:6px;margin-bottom:10px}
 button{width:100%;padding:12px;margin-top:8px;background:rgba(0,0,0,.4);
 border:2px solid #caa44a;color:#e8d9a6;font-size:18px;border-radius:4px}
@@ -42,16 +44,17 @@ let player = JSON.parse(localStorage.getItem("player")) || {
 
 function save(){localStorage.setItem("player",JSON.stringify(player))}
 function newGame(){localStorage.removeItem("player");location.reload()}
+
 function stat(){
 document.getElementById("stats").innerText=
 `Lv ${player.level} XP:${player.xp}/14
 HP:${player.hp}/${player.maxhp} | Мана:${player.mana}/${player.maxmana}
-Фракция судьбы: ${player.fate ? player.fate : "не выбрана"}
-Оружие:${player.weapon} (${player.damage}) | Броня:${player.armorName} (${player.armor})
-Золото:${player.gold} | Зелий:${player.potions}`
+Судьба: ${player.fate ? player.fate : "не выбрана"}
+Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor})
+Золото: ${player.gold} | Зелий: ${player.potions}`
 }
 
-function show(text,choices){
+function show(text,choices=[]){
 document.getElementById("text").innerHTML=text
 let c=document.getElementById("choices")
 c.innerHTML=""
@@ -64,9 +67,12 @@ c.appendChild(b)
 stat()
 }
 
-function levelUp(){if(player.xp<14)return;
-player.level++;player.xp=0;player.maxhp+=4;player.hp=player.maxhp;player.maxmana+=3;
-show("Ты становишься сильнее.",[{text:"Продолжить",action:start}])
+function levelUp(){
+if(player.xp<14)return
+player.level++;player.xp=0;
+player.maxhp+=4;player.hp=player.maxhp;
+player.maxmana+=3;player.mana=player.maxmana;
+show("Ты чувствуешь рост силы.",[{text:"Продолжить",action:start}])
 }
 
 function loot(){
@@ -76,208 +82,113 @@ if(Math.random()<.4)player.potions++
 levelUp()
 }
 
-// BATTLE
 function battle(enemy,img,onWin){
 if(player.hp<=0){show("Ты слишком ранен.",[{text:"Назад",action:start}]);return}
-let crit=Math.random()<.2
-let dmg=player.damage+player.strength
-if(crit)dmg+=3
+
+let dmg = player.damage + player.strength
 enemy.hp-=dmg
-let t=`<img class="scene" src="${img}">
+
+let text = `<img class="scene" src="${img}">
 ${enemy.name}
-HP:${enemy.hp<=0?0:enemy.hp}
-Ты наносишь ${dmg}${crit?" (КРИТ)":""}`
+HP: ${enemy.hp<0?0:enemy.hp}
+Ты наносишь ${dmg}`
+
 if(enemy.hp<=0){onWin();return}
-if(Math.random()>.3){
-let hit=Math.max(enemy.damage-player.armor,0)
+
+let hit = Math.max(enemy.damage-player.armor,0)
 player.hp-=hit
-t+=`\nВраг бьёт на ${hit}`
-}
+text+=`\nВраг бьёт на ${hit}`
+
 if(player.hp<=0){show("Ты погиб...",[{text:"Заново",action:newGame}]);return}
-show(t,[
-{text:"Драться",action:()=>battle(enemy,img,onWin)},
+
+show(text,[
+{text:"Биться",action:()=>battle(enemy,img,onWin)},
 {text:"Сбежать",action:start}
 ])
 }
 
-// MAIN
+/******** MAIN ********/
 function start(){
 show(
 `<img class="scene" src="https://images.unsplash.com/photo-1614854262340-9f51e96f7f04?auto=format&fit=crop&w=1200&q=60">
-Город перестал быть просто городом.
-Слухи говорят: мир подходит к краю пропасти.`,
+Город меняется. Мир становится опасным.`,
 [
 {text:"Город",action:city},
-{text:"Сюжет судьбы (новое)",action:fateStart},
+{text:"Сюжет судьбы",action:fateStart},
 {text:"Лес",action:forest},
 {text:"Пещера",action:cave},
 {text:"Таверна",action:shop}
 ])
 }
 
-// CITY
+/******** CITY ********/
 function city(){
-show("Город шумит. Но люди боятся смотреть в небо.",[
-{text:"Поговорить с людьми",action:rumors},
-{text:"Вернуться",action:start}
-])
+show("Люди обеспокоены. Что-то надвигается.",
+[{text:"Слухи",action:()=>show("Говорят, пробуждается древняя сила.",[{text:"Назад",action:city}])},
+{text:"Назад",action:start}])
 }
 
-function rumors(){
-show("Все говорят об одной вещи: что-то древнее просыпается.",[{text:"Назад",action:city}])
-}
-
-// Forest
+/******** AREAS ********/
 function forest(){
 let e={name:"Лесной зверь",hp:18,damage:5}
 battle(e,
 "https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("Трофеи твои.",[{text:"Назад",action:start}])})
+()=>{loot();show("Ты вернулся с добычей.",[{text:"Назад",action:start}])})
 }
 
-// CAVE
 function cave(){
-let e={name:"Существо Тьмы",hp:28,damage:8}
+let e={name:"Тёмное существо",hp:28,damage:8}
 battle(e,
 "https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("Пещера замирает.",[{text:"Назад",action:start}])})
+()=>{loot();show("В пещере становится тише.",[{text:"Назад",action:start}])})
 }
 
-// SHOP
 function shop(){
-show("Торговец нервничает. Мир меняется.",[
+show("— Мир меняется. Но золото по-прежнему золото.",
+[
 {text:"Купить зелье — 25 золота",action:()=>{
 if(player.gold>=25){player.gold-=25;player.potions++;shop()}
-else show("Денег нет.",[{text:"Назад",action:shop}])}},
+else show("Нет денег.",[{text:"Назад",action:shop}])}},
 {text:"Купить меч — 90 золота",action:()=>{
-if(player.gold>=90){player.gold-=90;player.weapon=\"Стальной меч\";player.damage=8;shop()}
-else show("Недостаточно.",[{text:"Назад",action:shop}])}},
+if(player.gold>=90){player.gold-=90;player.weapon="Стальной меч";player.damage=8;shop()}
+else show("Недостаточно средств.",[{text:"Назад",action:shop}])}},
 {text:"Назад",action:start}
 ])
 }
 
-// ======== FATE MAIN STORY ========
-
+/*********** FATE SYSTEM ***********/
 function fateStart(){
-if(player.fate){
-progressFate()
-return
-}
+if(player.fate){progressFate();return}
 
 show(
-`<img class="scene" src="https://images.unsplash.com/photo-1558981033-113a99c2d3b5?auto=format&fit=crop&w=1200&q=60">
-Ночь. Ты идешь по пустым улицам.
-И вдруг мир замирает. 
-Перед тобой появляются три фигуры.`,
+`Ночь. Мир замирает.
+Перед тобой три существа судьбы.`,
 [
-{text:"Подойти к человеку в сияющих доспехах",action:orderIntro},
-{text:"Подойти к тени с капюшоном",action:shadowIntro},
-{text:"Подойти к древнему существу",action:ancientIntro},
-{text:"Уйти",action:start}
+{text:"Порядок",action:()=>{player.fate="Порядок";player.strength+=2;progressFate()}},
+{text:"Тени",action:()=>{player.fate="Тени";player.dexterity+=2;progressFate()}},
+{text:"Древняя сила",action:()=>{player.fate="Древняя сила";player.maxmana+=5;progressFate()}},
+{text:"Назад",action:start}
 ])
 }
-
-// ORDER
-function orderIntro(){
-show("— Мир разваливается. Мы — единственный порядок. Встань с нами — и ты станешь частью силы.",[
-{text:"Принять судьбу ПОРЯДКА",action:()=>{player.fate='Порядок';player.strength+=2;progressFate()}},
-{text:"Назад",action:fateStart}
-])
-}
-
-// SHADOWS
-function shadowIntro(){
-show("— Свет лжёт. Порядок гниёт. Настоящая сила — в тени.",[
-{text:"Принять судьбу ТЕНЕЙ",action:()=>{player.fate='Тени';player.dexterity+=2;progressFate()}},
-{text:"Назад",action:fateStart}
-])
-}
-
-// ANCIENT
-function ancientIntro(){
-show("Голос без формы шепчет в голову: «Я был до них. Я буду после. Хочешь силы?»",[
-{text:"Принять судьбу ДРЕВНЕЙ СИЛЫ",action:()=>{player.fate='Древняя сила';player.maxmana+=6;progressFate()}},
-{text:"Назад",action:fateStart}
-])
-}
-
-// ========= PROGRESSION =========
 
 function progressFate(){
 player.fateProgress++
 
 if(player.fateProgress===1){
-show("Ты сделал свой выбор. Мир почувствовал его.",[{text:"Продолжить",action:fateQuest1}])
+show("Мир почувствовал твой выбор.",[{text:"Продолжить",action:start}])
 return
 }
 
 if(player.fateProgress===2){
-show("Твой путь укрепляется. Отступать поздно.",[{text:"Продолжить",action:fateQuest2}])
+if(player.fate==="Порядок"){player.armor+=2;player.armorName="Доспехи порядка"}
+if(player.fate==="Тени"){player.weapon="Клинок Тени";player.damage=9}
+if(player.fate==="Древняя сила"){player.maxmana+=5}
+show("Твой путь укрепляется.",[{text:"Дальше",action:start}])
 return
 }
 
 if(player.fateProgress>=3){
-finalFate()
-}
-}
-
-// QUEST 1
-function fateQuest1(){
-if(player.fate==="Порядок"){
-let e={name:"Мятежник",hp:22,damage:6}
-battle(e,
-"https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("Ты укрепил власть порядка.",[{text:"Дальше",action:start}])})
-return
-}
-
-if(player.fate==="Тени"){
-show("Ты узнаешь секрет. Кто-то важный — не тот, кем кажется.",[{text:"Дальше",action:start}])
-return
-}
-
-if(player.fate==="Древняя сила"){
-player.mana+=4
-show("Ты чувствуешь древнюю силу внутри себя.",[{text:"Дальше",action:start}])
-}
-}
-
-// QUEST 2
-function fateQuest2(){
-if(player.fate==="Порядок"){
-player.armor+=2
-player.armorName="Доспехи порядка"
-show("Тебе доверяют. Тебе дают доспех.",[{text:"Дальше",action:start}])
-return
-}
-
-if(player.fate==="Тени"){
-player.weapon="Клинок Тени"
-player.damage=9
-show("Тебе передают клинок, который никто не должен видеть.",[{text:"Дальше",action:start}])
-return
-}
-
-if(player.fate==="Древняя сила"){
-let e={name:"Существо из-за грани",hp:32,damage:9}
-battle(e,
-"https://images.unsplash.com/photo-1610465299996-8ad13cf5df76?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("Ты победил то, чего не должно быть.",[{text:"Дальше",action:start}])})
-}
-}
-
-// FINAL
-function finalFate(){
-if(player.fate==="Порядок"){
-show("Если продолжишь — ты станешь тем, кто правит этим городом.",[{text:"Вернуться к игре",action:start}])
-return
-}
-if(player.fate==="Тени"){
-show("Если продолжишь — твоё имя будут шептать, но никогда не скажут вслух.",[{text:"Вернуться",action:start}])
-return
-}
-if(player.fate==="Древняя сила"){
-show("Если продолжишь — мир изменится навсегда.",[{text:"Вернуться",action:start}])
+show("Финал пути судьбы скоро настигнет тебя…",{text:"Назад",action:start})
 }
 }
 
