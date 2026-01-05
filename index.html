@@ -3,19 +3,16 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего — v1.41 Stable</title>
+<title>Пепел Спящего — v1.5 (Full World + Fate)</title>
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-
 <style>
 body{margin:0;background:#000;color:#e8d9a6;font-family:Georgia,serif}
-#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);
-border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 25px #000}
+#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 25px #000}
 h1{text-align:center;font-family:"Uncial Antiqua";color:#f1d27c;font-size:26px}
 .stats{background:rgba(0,0,0,.7);border:2px solid #aa8844;padding:10px;margin-bottom:12px;font-size:14px}
 #text{white-space:pre-line;font-size:16px;line-height:1.45;margin-bottom:14px}
 img.scene{width:100%;border-radius:6px;margin-bottom:10px}
-button{width:100%;padding:12px;margin-top:8px;background:rgba(0,0,0,.4);
-border:2px solid #caa44a;color:#e8d9a6;font-size:18px;border-radius:4px}
+button{width:100%;padding:12px;margin-top:8px;background:rgba(0,0,0,.4);border:2px solid #caa44a;color:#e8d9a6;font-size:18px;border-radius:4px}
 button:hover{background:#caa44a;color:#000}
 </style>
 </head>
@@ -38,22 +35,29 @@ let player = JSON.parse(localStorage.getItem("player")) || {
  weapon:"Кулаки",damage:1,
  armor:0,armorName:"нет брони",
  xp:0,level:1,
+
+ // Гильдия воров
+ guild:null,
+ thiefRank:null,
+
+ // Секреты
+ secretItems:0,
+
+ // Судьба
  fate:null,
  fateProgress:0
 };
 
 function save(){localStorage.setItem("player",JSON.stringify(player))}
 function newGame(){localStorage.removeItem("player");location.reload()}
-
 function stat(){
 document.getElementById("stats").innerText=
 `Lv ${player.level} XP:${player.xp}/14
 HP:${player.hp}/${player.maxhp} | Мана:${player.mana}/${player.maxmana}
-Судьба: ${player.fate ? player.fate : "не выбрана"}
-Оружие: ${player.weapon} (${player.damage}) | Броня: ${player.armorName} (${player.armor})
-Золото: ${player.gold} | Зелий: ${player.potions}`
+Судьба: ${player.fate?player.fate:"не выбрана"} | Гильдия: ${player.guild?player.guild:"нет"} ${player.thiefRank?"/ "+player.thiefRank:""}
+Оружие:${player.weapon} (${player.damage}) | Броня:${player.armorName} (${player.armor})
+Золото:${player.gold} | Зелий:${player.potions} | Секреты:${player.secretItems}`
 }
-
 function show(text,choices=[]){
 document.getElementById("text").innerHTML=text
 let c=document.getElementById("choices")
@@ -82,26 +86,21 @@ if(Math.random()<.4)player.potions++
 levelUp()
 }
 
+// БОЙ
 function battle(enemy,img,onWin){
 if(player.hp<=0){show("Ты слишком ранен.",[{text:"Назад",action:start}]);return}
-
-let dmg = player.damage + player.strength
+let dmg=player.damage+player.strength
 enemy.hp-=dmg
-
-let text = `<img class="scene" src="${img}">
+let t=`<img class="scene" src="${img}">
 ${enemy.name}
-HP: ${enemy.hp<0?0:enemy.hp}
+HP:${enemy.hp<0?0:enemy.hp}
 Ты наносишь ${dmg}`
-
 if(enemy.hp<=0){onWin();return}
-
-let hit = Math.max(enemy.damage-player.armor,0)
+let hit=Math.max(enemy.damage-player.armor,0)
 player.hp-=hit
-text+=`\nВраг бьёт на ${hit}`
-
+t+=`\nВраг бьёт на ${hit}`
 if(player.hp<=0){show("Ты погиб...",[{text:"Заново",action:newGame}]);return}
-
-show(text,[
+show(t,[
 {text:"Биться",action:()=>battle(enemy,img,onWin)},
 {text:"Сбежать",action:start}
 ])
@@ -111,62 +110,175 @@ show(text,[
 function start(){
 show(
 `<img class="scene" src="https://images.unsplash.com/photo-1614854262340-9f51e96f7f04?auto=format&fit=crop&w=1200&q=60">
-Город меняется. Мир становится опасным.`,
+Город меняется. Тайны множатся. Судьба зовёт.`,
 [
-{text:"Город",action:city},
+{text:"Исследовать город",action:city},
+{text:"Тёмные районы",action:slums},
+{text:"Тайны и секретные места",action:secrets},
 {text:"Сюжет судьбы",action:fateStart},
 {text:"Лес",action:forest},
 {text:"Пещера",action:cave},
-{text:"Таверна",action:shop}
+{text:"Таверна / рынок",action:market}
 ])
 }
 
-/******** CITY ********/
+/******** ГОРОД ********/
 function city(){
-show("Люди обеспокоены. Что-то надвигается.",
-[{text:"Слухи",action:()=>show("Говорят, пробуждается древняя сила.",[{text:"Назад",action:city}])},
-{text:"Назад",action:start}])
-}
-
-/******** AREAS ********/
-function forest(){
-let e={name:"Лесной зверь",hp:18,damage:5}
-battle(e,
-"https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("Ты вернулся с добычей.",[{text:"Назад",action:start}])})
-}
-
-function cave(){
-let e={name:"Тёмное существо",hp:28,damage:8}
-battle(e,
-"https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
-()=>{loot();show("В пещере становится тише.",[{text:"Назад",action:start}])})
-}
-
-function shop(){
-show("— Мир меняется. Но золото по-прежнему золото.",
-[
-{text:"Купить зелье — 25 золота",action:()=>{
-if(player.gold>=25){player.gold-=25;player.potions++;shop()}
-else show("Нет денег.",[{text:"Назад",action:shop}])}},
-{text:"Купить меч — 90 золота",action:()=>{
-if(player.gold>=90){player.gold-=90;player.weapon="Стальной меч";player.damage=8;shop()}
-else show("Недостаточно средств.",[{text:"Назад",action:shop}])}},
+show("Город живёт, но каждый уголок может укусить.",[
+{text:"Пристань",action:docks},
+{text:"Переулки",action:alleys},
+{text:"Дом аристократа",action:richHouse},
 {text:"Назад",action:start}
 ])
 }
 
-/*********** FATE SYSTEM ***********/
+// Пристань
+function docks(){
+if(Math.random()>.5){
+player.secretItems++
+show("Ты находишь странную древнюю монету.",[{text:"Назад",action:city}])
+}else{
+let e={name:"Разбойники пристани",hp:22,damage:6}
+battle(e,
+"https://images.unsplash.com/photo-1558981033-113a99c2d3b5?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Ты очищаешь пристань.",[{text:"Назад",action:city}])})
+}
+}
+
+// Переулки
+function alleys(){
+if(!player.thiefRank){
+show("Тень шепчет: «Тебя ищут. Если хочешь золота — приходи в тёмные районы».",
+[{text:"Продолжить",action:slums}])
+return
+}
+if(Math.random()>.5){
+player.secretItems++
+show("Ты находишь тайник. Внутри редкие вещи.",[{text:"Назад",action:city}])
+}else{
+let e={name:"Городская тварь",hp:20,damage:7}
+battle(e,
+"https://images.unsplash.com/photo-1610465299996-8ad13cf5df76?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Переулки снова тихи.",[{text:"Назад",action:city}])})
+}
+}
+
+// Богатый дом
+function richHouse(){
+if(Math.random()>.5){
+player.gold+=90
+player.secretItems++
+show("Ты обчистил роскошный дом. Красиво.",[{text:"Назад",action:city}])
+}else{
+player.hp-=7
+show("Стража заметила! Ты едва убежал.",[{text:"Назад",action:city}])
+}
+}
+
+/******** РЫНОК ********/
+function market(){
+show("Шум и опасные сделки.",
+[
+{text:"Купить зелье — 25 золота",action:()=>{
+if(player.gold>=25){player.gold-=25;player.potions++;market()}
+else show("Мало золота.",[{text:"Назад",action:market}])}},
+{text:"Купить меч — 90 золота",action:()=>{
+if(player.gold>=90){player.gold-=90;player.weapon="Стальной меч";player.damage=9;market()}
+else show("Недостаточно.",[{text:"Назад",action:market}])}},
+{text:"Назад",action:start}
+])
+}
+
+/******** СЕКРЕТЫ ********/
+function secrets(){
+if(Math.random()>.6){
+player.secretItems++
+show(
+`<img class="scene" src="https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60">
+Ты находишь что-то... что не должно существовать.`,
+[{text:"Уйти",action:start}])
+}else{
+show("Сегодня город скрывает тайны. Но они ждут.",[{text:"Назад",action:start}])
+}
+}
+
+/******** ТЁМНЫЕ РАЙОНЫ + ГИЛЬДИЯ ВОРОВ ********/
+function slums(){
+show("Здесь власть принадлежит тени.",[
+{text:"Искать Гильдию Воров",action:thiefGuild},
+{text:"Назад",action:start}
+])
+}
+
+function thiefGuild(){
+if(!player.thiefRank){
+show("— Мы наблюдали за тобой. Вступишь — получишь золото и свободу?",
+[
+{text:"Вступить",action:()=>{player.guild="Воры";player.thiefRank="Новичок";player.dexterity++;start()}},
+{text:"Уйти",action:start}
+])
+return
+}
+show("Гильдия ждёт дел.",[
+{text:"Мелкое дело",action:smallTheft},
+{text:"Серьёзное дело",action:bigTheft},
+{text:"Назад",action:start}
+])
+}
+
+function smallTheft(){
+if(Math.random()>.4){
+player.gold+=60
+player.thiefRank="Проверенный"
+show("Чисто. Тебя уважают.",[{text:"Назад",action:start}])
+}else{
+player.hp-=6
+show("Поймали и избили. Больно.",[{text:"Назад",action:start}])
+}
+}
+
+function bigTheft(){
+if(player.thiefRank!=="Проверенный"){
+show("Тебе ещё не доверяют такие дела.",[{text:"Назад",action:start}])
+return
+}
+if(Math.random()>.5){
+player.gold+=140
+player.secretItems++
+player.thiefRank="Мастер"
+show("Теперь твоё имя шепчут.",[{text:"Назад",action:start}])
+}else{
+player.hp-=10
+show("Это была ловушка. Но ты выжил.",[{text:"Назад",action:start}])
+}
+}
+
+/******** ЛЕС и ПЕЩЕРА ********/
+function forest(){
+let e={name:"Лесной зверь",hp:18,damage:5}
+battle(e,
+"https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Добыча твоя.",[{text:"Назад",action:start}])})
+}
+
+function cave(){
+let e={name:"Существо тьмы",hp:28,damage:8}
+battle(e,
+"https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Пещера замирает.",[{text:"Назад",action:start}])})
+}
+
+/******** СЮЖЕТ СУДЬБЫ ********/
 function fateStart(){
-if(player.fate){progressFate();return}
+if(player.fate){return progressFate()}
 
 show(
 `Ночь. Мир замирает.
-Перед тобой три существа судьбы.`,
+Перед тобой три силы судьбы.`,
 [
 {text:"Порядок",action:()=>{player.fate="Порядок";player.strength+=2;progressFate()}},
 {text:"Тени",action:()=>{player.fate="Тени";player.dexterity+=2;progressFate()}},
-{text:"Древняя сила",action:()=>{player.fate="Древняя сила";player.maxmana+=5;progressFate()}},
+{text:"Древняя сила",action:()=>{player.fate="Древняя сила";player.maxmana+=6;progressFate()}},
 {text:"Назад",action:start}
 ])
 }
@@ -181,14 +293,14 @@ return
 
 if(player.fateProgress===2){
 if(player.fate==="Порядок"){player.armor+=2;player.armorName="Доспехи порядка"}
-if(player.fate==="Тени"){player.weapon="Клинок Тени";player.damage=9}
-if(player.fate==="Древняя сила"){player.maxmana+=5}
-show("Твой путь укрепляется.",[{text:"Дальше",action:start}])
+if(player.fate==="Тени"){player.weapon="Клинок Тени";player.damage=10}
+if(player.fate==="Древняя сила"){player.maxmana+=6}
+show("Твой путь крепнет.",[{text:"Дальше",action:start}])
 return
 }
 
 if(player.fateProgress>=3){
-show("Финал пути судьбы скоро настигнет тебя…",{text:"Назад",action:start})
+show("Финал твоей судьбы приближается. Город уже не будет прежним.",[{text:"Вернуться",action:start}])
 }
 }
 
