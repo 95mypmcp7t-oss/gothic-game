@@ -3,343 +3,285 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего — v0.8</title>
-
+<title>Пепел Спящего — v1.4 (Сюжет судьбы)</title>
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
-
 <style>
-body {
-  margin:0;
-  background:#000;
-  background-image:url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1600&q=60');
-  background-size:cover;
-  background-attachment:fixed;
-  color:#e8d9a6;
-  font-family: Georgia, serif;
-}
-#game {
-  max-width:700px;
-  margin:40px auto;
-  padding:18px;
-  background:rgba(0,0,0,0.82);
-  border:3px solid #caa44a;
-  border-radius:6px;
-  box-shadow:0 0 25px #000;
-}
-h1 {
-  text-align:center;
-  font-family:"Uncial Antiqua";
-  letter-spacing:2px;
-  font-size:24px;
-  margin-top:0;
-  color:#f1d27c;
-}
-.stats {
-  background:rgba(0,0,0,0.7);
-  border:2px solid #aa8844;
-  padding:10px;
-  margin-bottom:12px;
-  font-size:14px;
-}
-#text {
-  white-space:pre-line;
-  font-size:16px;
-  line-height:1.45;
-  margin-bottom:14px;
-}
-img.scene {
-  width:100%;
-  border-radius:6px;
-  margin-bottom:10px;
-}
-button {
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  background:rgba(0,0,0,0.4);
-  border:2px solid #caa44a;
-  color:#e8d9a6;
-  font-size:18px;
-  border-radius:4px;
-}
-button:hover, button:active {
-  background:#caa44a;
-  color:#000;
-}
+body{margin:0;background:#000;color:#e8d9a6;font-family:Georgia,serif}
+#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 28px #000}
+h1{text-align:center;font-family:"Uncial Antiqua";letter-spacing:2px;font-size:26px;color:#f1d27c}
+.stats{background:rgba(0,0,0,.7);border:2px solid #aa8844;padding:10px;margin-bottom:12px;font-size:14px}
+#text{white-space:pre-line;font-size:16px;line-height:1.5;margin-bottom:14px}
+img.scene{width:100%;border-radius:6px;margin-bottom:10px}
+button{width:100%;padding:12px;margin-top:8px;background:rgba(0,0,0,.4);
+border:2px solid #caa44a;color:#e8d9a6;font-size:18px;border-radius:4px}
+button:hover{background:#caa44a;color:#000}
 </style>
 </head>
 
 <body>
 <div id="game">
-  <h1>Пепел Спящего</h1>
-  <div class="stats" id="stats"></div>
-  <div id="text"></div>
-  <div id="choices"></div>
-  <button onclick="newGame()">Новая игра</button>
+<h1>Пепел Спящего</h1>
+<div class="stats" id="stats"></div>
+<div id="text"></div>
+<div id="choices"></div>
+<button onclick="newGame()">Новая игра</button>
 </div>
 
 <script>
 let player = JSON.parse(localStorage.getItem("player")) || {
- strength:3,
- dexterity:2,
- charisma:1,
- hp:16,
- maxhp:16,
- weapon:"Кулаки",
- damage:1,
- armor:0,
- armorName:"Нет брони",
- gold:30,
- potions:2,
- xp:0,
- level:1,
- guild:null,
- mats:{skin:0,fang:0,ore:0,ash:0},
- quest:{rat:false,tavern:false,cave:false},
+ strength:4,dexterity:3,charisma:2,
+ hp:24,maxhp:24,
+ mana:12,maxmana:12,
+ gold:60,potions:3,
+ weapon:"Кулаки",damage:1,
+ armor:0,armorName:"нет брони",
+ xp:0,level:1,
+ fate:null,
+ fateProgress:0
 };
 
-function save(){localStorage.setItem("player", JSON.stringify(player));}
-function newGame(){localStorage.removeItem("player");location.reload();}
+function save(){localStorage.setItem("player",JSON.stringify(player))}
+function newGame(){localStorage.removeItem("player");location.reload()}
 function stat(){
- document.getElementById("stats").innerText=
-`Lv ${player.level} XP: ${player.xp}/10 | Гильдия: ${player.guild ? player.guild : "нет"}
-HP: ${player.hp}/${player.maxhp}
-Сила ${player.strength} | Ловкость ${player.dexterity} | Харизма ${player.charisma}
-Оружие ${player.weapon} (${player.damage}) | Броня ${player.armorName} (${player.armor})
-Золото ${player.gold} | Зелий ${player.potions}
-Материалы: Кожа:${player.mats.skin} Клыки:${player.mats.fang} Руда:${player.mats.ore} Пепел:${player.mats.ash}`;
+document.getElementById("stats").innerText=
+`Lv ${player.level} XP:${player.xp}/14
+HP:${player.hp}/${player.maxhp} | Мана:${player.mana}/${player.maxmana}
+Фракция судьбы: ${player.fate ? player.fate : "не выбрана"}
+Оружие:${player.weapon} (${player.damage}) | Броня:${player.armorName} (${player.armor})
+Золото:${player.gold} | Зелий:${player.potions}`
 }
 
-function show(text, choices){
- document.getElementById("text").innerHTML=text;
- const c=document.getElementById("choices");
- c.innerHTML="";
- choices.forEach(ch=>{
- let b=document.createElement("button");
- b.innerText=ch.text;
- b.onclick=()=>{ch.action();save();};
- c.appendChild(b);
- });
- stat();
+function show(text,choices){
+document.getElementById("text").innerHTML=text
+let c=document.getElementById("choices")
+c.innerHTML=""
+choices.forEach(ch=>{
+let b=document.createElement("button")
+b.innerText=ch.text
+b.onclick=()=>{ch.action();save()}
+c.appendChild(b)
+})
+stat()
 }
 
-// LEVEL
-function levelUp(){
- if(player.xp<10)return;
- player.level++;
- player.xp=0;
- player.maxhp+=2;
- player.hp=player.maxhp;
- show("Ты чувствуешь как становишься сильнее!",[
-  {text:"Сила +1",action:()=>{player.strength++;start();}},
-  {text:"Ловкость +1",action:()=>{player.dexterity++;start();}},
-  {text:"Харизма +1",action:()=>{player.charisma++;start();}}
- ]);
+function levelUp(){if(player.xp<14)return;
+player.level++;player.xp=0;player.maxhp+=4;player.hp=player.maxhp;player.maxmana+=3;
+show("Ты становишься сильнее.",[{text:"Продолжить",action:start}])
 }
 
-// HEAL
-function potion(back=start){
- if(player.potions<=0){show("Зелий нет.",[{text:"Назад",action:back}]);return;}
- player.potions--;
- player.hp=Math.min(player.hp+12,player.maxhp);
- show("Ты выпиваешь зелье.",[{text:"Назад",action:back}]);
-}
-
-// LOOT
-function loot(type){
- player.gold += Math.floor(Math.random()*10)+5;
- player.xp+=5;
- if(Math.random()<0.4) player.potions++;
-
- if(type==="wolf") player.mats.skin++;
- if(type==="wolf") player.mats.fang++;
- if(type==="bandit") player.mats.ore++;
- if(type==="beast") player.mats.ash++;
-
- levelUp();
+function loot(){
+player.gold+=Math.floor(Math.random()*20)+10
+player.xp+=7
+if(Math.random()<.4)player.potions++
+levelUp()
 }
 
 // BATTLE
 function battle(enemy,img,onWin){
- if(player.hp<=0){show("Ты слишком ранен…",[ {text:"Назад",action:start} ]);return;}
-
- let crit=Math.random()<0.2;
- let dmg=player.damage+player.strength;
- if(crit)dmg+=2;
- enemy.hp-=dmg;
-
- let t =
-`<img class="scene" src="${img}">
+if(player.hp<=0){show("Ты слишком ранен.",[{text:"Назад",action:start}]);return}
+let crit=Math.random()<.2
+let dmg=player.damage+player.strength
+if(crit)dmg+=3
+enemy.hp-=dmg
+let t=`<img class="scene" src="${img}">
 ${enemy.name}
-HP: ${enemy.hp<=0?0:enemy.hp}
-Ты бьешь на ${dmg}${crit?" (КРИТ!)":""}`;
-
- if(enemy.hp<=0){ onWin();return;}
-
- if(Math.random()>0.2){
-  let hit=Math.max(enemy.damage-player.armor,0);
-  player.hp-=hit;
-  t+=`\nВраг бьет — ${hit}`;
- } else t+="\nВраг промахнулся";
-
- if(player.hp<=0){
-  show("Ты пал…",[ {text:"Заново",action:newGame} ]);
-  return;
- }
-
- show(t,[
-  {text:"Продолжить бой",action:()=>battle(enemy,img,onWin)},
-  {text:"Сбежать",action:start},
-  {text:"Зелье",action:()=>potion(()=>battle(enemy,img,onWin))}
- ]);
+HP:${enemy.hp<=0?0:enemy.hp}
+Ты наносишь ${dmg}${crit?" (КРИТ)":""}`
+if(enemy.hp<=0){onWin();return}
+if(Math.random()>.3){
+let hit=Math.max(enemy.damage-player.armor,0)
+player.hp-=hit
+t+=`\nВраг бьёт на ${hit}`
+}
+if(player.hp<=0){show("Ты погиб...",[{text:"Заново",action:newGame}]);return}
+show(t,[
+{text:"Драться",action:()=>battle(enemy,img,onWin)},
+{text:"Сбежать",action:start}
+])
 }
 
-// MAIN CITY
+// MAIN
 function start(){
- show(
+show(
 `<img class="scene" src="https://images.unsplash.com/photo-1614854262340-9f51e96f7f04?auto=format&fit=crop&w=1200&q=60">
-Старый портовый город. Ветер несет соль и тревогу.`,
+Город перестал быть просто городом.
+Слухи говорят: мир подходит к краю пропасти.`,
 [
- {text:"Город",action:city},
- {text:"Лес (охота)",action:hunt},
- {text:"Пещера",action:cave},
- {text:"Таверна / Торговля",action:shop},
- {text:"Гильдии",action:guild},
- {text:"Выпить зелье",action:()=>potion(start)}
-]);
+{text:"Город",action:city},
+{text:"Сюжет судьбы (новое)",action:fateStart},
+{text:"Лес",action:forest},
+{text:"Пещера",action:cave},
+{text:"Таверна",action:shop}
+])
 }
 
 // CITY
 function city(){
- show(
-`<img class="scene" src="https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?auto=format&fit=crop&w=1200&q=60">
-Каменные стены, тяжелые взгляды стражи. Здесь всё серьезно.`,
-[
- {text:"Поговорить со стражей",action:guard},
- {text:"Вернуться",action:start}
-]);
+show("Город шумит. Но люди боятся смотреть в небо.",[
+{text:"Поговорить с людьми",action:rumors},
+{text:"Вернуться",action:start}
+])
 }
 
-// SHOP
-function shop(){
- show(
-`<img class="scene" src="https://images.unsplash.com/photo-1592840065843-9c61a1a39aea?auto=format&fit=crop&w=1200&q=60">
-Старый торговец смотрит внимательно.
-— Тебе что-то нужно?`,
-[
- {text:"Зелье — 15 золота",action:()=>{
-  if(player.gold>=15){player.gold-=15;player.potions++;shop();}
-  else show("Мало золота.",[{text:"Назад",action:shop}]);
- }},
- {text:"Меч +2 урона — 50 золота",action:()=>{
-  if(player.gold>=50){player.gold-=50;player.weapon="Боевой меч";player.damage=5;shop();}
-  else show("Мало золота.",[{text:"Назад",action:shop}]);
- }},
- {text:"Броня 2 защиты — 50 золота",action:()=>{
-  if(player.gold>=50){player.gold-=50;player.armor=2;player.armorName="Усиленная кожа";shop();}
-  else show("Мало золота.",[{text:"Назад",action:shop}]);
- }},
- {text:"Продать материалы",action:sell},
- {text:"Назад",action:start}
-]);
+function rumors(){
+show("Все говорят об одной вещи: что-то древнее просыпается.",[{text:"Назад",action:city}])
 }
 
-// SELL
-function sell(){
- let profit = player.mats.skin*5 + player.mats.fang*5 + player.mats.ore*8 + player.mats.ash*15;
- player.gold+=profit;
- player.mats={skin:0,fang:0,ore:0,ash:0};
- show("Ты продаешь всё и получаешь "+profit+" золота.",[{text:"Назад",action:shop}]);
-}
-
-// HUNTING
-function hunt(){
- show(
-`<img class="scene" src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=60">
-Лес тяжелый и опасный.`,
-[
- {text:"Охотиться на волков",action:wolf},
- {text:"Искать бандитов",action:bandit},
- {text:"Назад",action:start}
-]);
-}
-
-function wolf(){
- let e={name:"Серый хищник",hp:14,damage:3};
- battle(e,
- "https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
- ()=>{loot("wolf");show("Ты добыл шкуры и клыки.",[{text:"Назад",action:start}]);}
- );
-}
-
-function bandit(){
- let e={name:"Лесной бандит",hp:18,damage:4};
- battle(e,
- "https://images.unsplash.com/photo-1558981033-113a99c2d3b5?auto=format&fit=crop&w=1200&q=60",
- ()=>{loot("bandit");show("Бандит повержен. Ты находишь добычу.",[{text:"Назад",action:start}]);}
- );
+// Forest
+function forest(){
+let e={name:"Лесной зверь",hp:18,damage:5}
+battle(e,
+"https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Трофеи твои.",[{text:"Назад",action:start}])})
 }
 
 // CAVE
 function cave(){
- let e={name:"Тварь из тумана",hp:26,damage:6};
- battle(e,
- "https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
- ()=>{loot("beast");show("Тьма шепчет твоё имя…",{text:"Назад",action:start});}
- );
+let e={name:"Существо Тьмы",hp:28,damage:8}
+battle(e,
+"https://images.unsplash.com/photo-1508193638397-1c437248f26a?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Пещера замирает.",[{text:"Назад",action:start}])})
 }
 
-// GUILDS
-function guild(){
- if(player.guild){
- show("Ты уже состоишь в гильдии: "+player.guild,[{text:"Назад",action:start}]);
- return;
- }
+// SHOP
+function shop(){
+show("Торговец нервничает. Мир меняется.",[
+{text:"Купить зелье — 25 золота",action:()=>{
+if(player.gold>=25){player.gold-=25;player.potions++;shop()}
+else show("Денег нет.",[{text:"Назад",action:shop}])}},
+{text:"Купить меч — 90 золота",action:()=>{
+if(player.gold>=90){player.gold-=90;player.weapon=\"Стальной меч\";player.damage=8;shop()}
+else show("Недостаточно.",[{text:"Назад",action:shop}])}},
+{text:"Назад",action:start}
+])
+}
 
- show(
-`<img class="scene" src="https://images.unsplash.com/photo-1547314036-b6a7c54a43a7?auto=format&fit=crop&w=1200&q=60">
-Залы власти и тайных союзов. К кому примкнёшь?`,
+// ======== FATE MAIN STORY ========
+
+function fateStart(){
+if(player.fate){
+progressFate()
+return
+}
+
+show(
+`<img class="scene" src="https://images.unsplash.com/photo-1558981033-113a99c2d3b5?auto=format&fit=crop&w=1200&q=60">
+Ночь. Ты идешь по пустым улицам.
+И вдруг мир замирает. 
+Перед тобой появляются три фигуры.`,
 [
- {text:"Охотники",action:()=>{player.guild="Охотник";player.dexterity++;start();}},
- {text:"Городская стража",action:()=>{player.guild="Страж";player.strength++;player.armor++;start();}},
- {text:"Тайный Орден Пепла",action:()=>{player.guild="Орден Пепла";player.weapon="Рунический клинок";player.damage+=2;start();}},
- {text:"Назад",action:start}
-]);
+{text:"Подойти к человеку в сияющих доспехах",action:orderIntro},
+{text:"Подойти к тени с капюшоном",action:shadowIntro},
+{text:"Подойти к древнему существу",action:ancientIntro},
+{text:"Уйти",action:start}
+])
 }
 
-// GUARD QUEST
-function guard(){
- if(!player.quest.rat){
- show("— В старых кварталах появились твари. Разберёшься?",[
-  {text:"Берусь",action:ratQuest},
-  {text:"Назад",action:start}
- ]);
- return;
- }
- show("— Работа выполнена.",[{text:"Назад",action:start}]);
+// ORDER
+function orderIntro(){
+show("— Мир разваливается. Мы — единственный порядок. Встань с нами — и ты станешь частью силы.",[
+{text:"Принять судьбу ПОРЯДКА",action:()=>{player.fate='Порядок';player.strength+=2;progressFate()}},
+{text:"Назад",action:fateStart}
+])
 }
 
-function ratQuest(){
- let e={name:"Гнилой зверь",hp:12,damage:3};
- battle(e,
- "https://images.unsplash.com/photo-1610465299996-8ad13cf5df76?auto=format&fit=crop&w=1200&q=60",
- ()=>{player.gold+=40;player.quest.rat=true;show("Город стал чуть безопаснее.",[{text:"Назад",action:start}]);}
- );
+// SHADOWS
+function shadowIntro(){
+show("— Свет лжёт. Порядок гниёт. Настоящая сила — в тени.",[
+{text:"Принять судьбу ТЕНЕЙ",action:()=>{player.fate='Тени';player.dexterity+=2;progressFate()}},
+{text:"Назад",action:fateStart}
+])
 }
 
-// INV
-function inv(){
- show(
-`Инвентарь:
-Оружие ${player.weapon}
-Броня ${player.armorName}
-Золото ${player.gold}
-Зелий ${player.potions}`,
-[{text:"Назад",action:start}]
-);
+// ANCIENT
+function ancientIntro(){
+show("Голос без формы шепчет в голову: «Я был до них. Я буду после. Хочешь силы?»",[
+{text:"Принять судьбу ДРЕВНЕЙ СИЛЫ",action:()=>{player.fate='Древняя сила';player.maxmana+=6;progressFate()}},
+{text:"Назад",action:fateStart}
+])
 }
 
-start();
+// ========= PROGRESSION =========
+
+function progressFate(){
+player.fateProgress++
+
+if(player.fateProgress===1){
+show("Ты сделал свой выбор. Мир почувствовал его.",[{text:"Продолжить",action:fateQuest1}])
+return
+}
+
+if(player.fateProgress===2){
+show("Твой путь укрепляется. Отступать поздно.",[{text:"Продолжить",action:fateQuest2}])
+return
+}
+
+if(player.fateProgress>=3){
+finalFate()
+}
+}
+
+// QUEST 1
+function fateQuest1(){
+if(player.fate==="Порядок"){
+let e={name:"Мятежник",hp:22,damage:6}
+battle(e,
+"https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Ты укрепил власть порядка.",[{text:"Дальше",action:start}])})
+return
+}
+
+if(player.fate==="Тени"){
+show("Ты узнаешь секрет. Кто-то важный — не тот, кем кажется.",[{text:"Дальше",action:start}])
+return
+}
+
+if(player.fate==="Древняя сила"){
+player.mana+=4
+show("Ты чувствуешь древнюю силу внутри себя.",[{text:"Дальше",action:start}])
+}
+}
+
+// QUEST 2
+function fateQuest2(){
+if(player.fate==="Порядок"){
+player.armor+=2
+player.armorName="Доспехи порядка"
+show("Тебе доверяют. Тебе дают доспех.",[{text:"Дальше",action:start}])
+return
+}
+
+if(player.fate==="Тени"){
+player.weapon="Клинок Тени"
+player.damage=9
+show("Тебе передают клинок, который никто не должен видеть.",[{text:"Дальше",action:start}])
+return
+}
+
+if(player.fate==="Древняя сила"){
+let e={name:"Существо из-за грани",hp:32,damage:9}
+battle(e,
+"https://images.unsplash.com/photo-1610465299996-8ad13cf5df76?auto=format&fit=crop&w=1200&q=60",
+()=>{loot();show("Ты победил то, чего не должно быть.",[{text:"Дальше",action:start}])})
+}
+}
+
+// FINAL
+function finalFate(){
+if(player.fate==="Порядок"){
+show("Если продолжишь — ты станешь тем, кто правит этим городом.",[{text:"Вернуться к игре",action:start}])
+return
+}
+if(player.fate==="Тени"){
+show("Если продолжишь — твоё имя будут шептать, но никогда не скажут вслух.",[{text:"Вернуться",action:start}])
+return
+}
+if(player.fate==="Древняя сила"){
+show("Если продолжишь — мир изменится навсегда.",[{text:"Вернуться",action:start}])
+}
+}
+
+start()
 </script>
 </body>
 </html>
