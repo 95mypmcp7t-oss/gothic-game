@@ -2,15 +2,15 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
+<title>Пепел Спящего — v3.0 ARCANE WORLD</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Пепел Спящего — v2.0 LEGENDS & FACTIONS</title>
 <link href="https://fonts.googleapis.com/css2?family=Uncial+Antiqua&display=swap" rel="stylesheet">
 <style>
 body{margin:0;background:#000;color:#e8d9a6;font-family:Georgia,serif}
-#game{max-width:760px;margin:40px auto;padding:18px;background:rgba(0,0,0,.9);border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 25px #000}
-h1{text-align:center;font-family:"Uncial+Antiqua";color:#f1d27c;font-size:26px}
-.stats{background:rgba(0,0,0,.7);border:2px solid #aa8844;padding:10px;margin-bottom:12px;font-size:14px}
-#text{white-space:pre-line;font-size:16px;line-height:1.4;margin-bottom:14px}
+#game{max-width:820px;margin:35px auto;padding:20px;background:rgba(0,0,0,.9);border:3px solid #caa44a;border-radius:6px;box-shadow:0 0 30px #000}
+h1{text-align:center;font-family:"Uncial Antiqua";color:#f1d27c;font-size:30px}
+.stats{background:rgba(0,0,0,.7);border:2px solid #aa8844;padding:12px;margin-bottom:12px;font-size:14px}
+#text{white-space:pre-line;font-size:16px;line-height:1.45;margin-bottom:12px}
 img.scene{width:100%;border-radius:6px;margin-bottom:10px}
 button{width:100%;padding:12px;margin-top:8px;background:rgba(0,0,0,.4);border:2px solid #caa44a;color:#e8d9a6;font-size:18px;border-radius:4px}
 button:hover{background:#caa44a;color:#000}
@@ -19,8 +19,8 @@ button:hover{background:#caa44a;color:#000}
 
 <body>
 <div id="game">
-<h1>Пепел Спящего</h1>
-<div class="stats" id="stats"></div>
+<h1>Пепел Спящего — v3.0</h1>
+<div id="stats" class="stats"></div>
 <div id="text"></div>
 <div id="choices"></div>
 <button onclick="newGame()">Новая игра</button>
@@ -29,10 +29,10 @@ button:hover{background:#caa44a;color:#000}
 <script>
 // ================= PLAYER ===================
 let player = JSON.parse(localStorage.getItem("player")) || {
-strength:7,dexterity:5,charisma:3,
-hp:38,maxhp:38,
-mana:16,maxmana:16,
-gold:180,potions:5,
+strength:7,dexterity:6,charisma:4,
+hp:40,maxhp:40,
+mana:20,maxmana:20,
+gold:220,potions:6,
 weapon:"Кулаки",damage:3,
 armor:0,armorName:"нет брони",
 helmet:0,helmetName:"нет шлема",
@@ -40,14 +40,17 @@ xp:0,level:1,
 
 guild:null,thiefRank:null,
 banditRank:null,
+mageRank:null,
+companion:null,
+
+skill:null,
 blacksmithQuest:0,
+marketQuest:0,
 
 secretItems:0,
 quest:null,
 
-inventory:{
-wolfSkin:0,fang:0,darkEss:0,ore:0,relic:0
-}
+inventory:{wolf:0,fang:0,ess:0,ore:0,relic:0}
 };
 
 function save(){localStorage.setItem("player",JSON.stringify(player))}
@@ -55,73 +58,93 @@ function newGame(){localStorage.removeItem("player");location.reload()}
 
 function stat(){
 document.getElementById("stats").innerText=
-`Lv ${player.level} XP:${player.xp}/20
-HP:${player.hp}/${player.maxhp}
-Гильдия:${player.guild?player.guild:"нет"} ${player.thiefRank||""}
-Банда:${player.banditRank?player.banditRank:"нет"}
-Оружие:${player.weapon} (${player.damage})
-Броня:${player.armorName} (${player.armor}) | Шлем:${player.helmetName} (${player.helmet})
-Золото:${player.gold} Зелий:${player.potions}
-Трофеи: шкуры:${player.inventory.wolfSkin} клыки:${player.inventory.fang} эссенции:${player.inventory.darkEss} руда:${player.inventory.ore} реликвии:${player.inventory.relic}`
+`Lv ${player.level} XP:${player.xp}/24
+HP:${player.hp}/${player.maxhp}  Мана:${player.mana}/${player.maxmana}
+Навык боя: ${player.skill?player.skill:"не выбран"}
+Гильдия магов: ${player.mageRank?player.mageRank:"нет"}
+Банда: ${player.banditRank?player.banditRank:"нет"}
+Спутник: ${player.companion?player.companion:"нет"}
+Оружие: ${player.weapon} (${player.damage}) | Броня:${player.armorName} (${player.armor}) | Шлем:${player.helmetName} (${player.helmet})
+Золото:${player.gold} | Зелий:${player.potions}
+Трофеи: шкуры:${player.inventory.wolf} клыки:${player.inventory.fang} эссенции:${player.inventory.ess} руда:${player.inventory.ore} реликвии:${player.inventory.relic}`
 }
 
 function show(text,choices=[]){
-document.getElementById("text").innerHTML=text;
-let c=document.getElementById("choices");
-c.innerHTML="";
+document.getElementById("text").innerHTML=text
+let c=document.getElementById("choices")
+c.innerHTML=""
 choices.forEach(ch=>{
-let b=document.createElement("button");
-b.innerText=ch.text;
+let b=document.createElement("button")
+b.innerText=ch.text
 b.onclick=()=>{ch.action();save()}
-c.appendChild(b);
-});
-stat();
+c.appendChild(b)
+})
+stat()
 }
 
 // ================= LEVEL ===================
 function levelUp(){
-if(player.xp<20)return
+if(player.xp<24)return
 player.level++;player.xp=0;
-player.maxhp+=8;
-player.hp=player.maxhp;
-show("Ты стал сильнее.",[{text:"Продолжить",action:start}])
+player.maxhp+=10;player.hp=player.maxhp;
+player.maxmana+=6;player.mana=player.maxmana;
+show("Ты чувствуешь, как мир становится меньше, а ты — больше.",[{text:"Продолжить",action:start}])
 }
 
-// ================= POTION ===================
+// ================= POTIONS ===================
 function usePotion(back){
-if(!player.potions){
-show("Зелий нет.",[{text:"Назад",action:back}])
-return
-}
+if(!player.potions){show("Зелий нет.",[{text:"Назад",action:back}]);return}
 player.potions--;
-player.hp=Math.min(player.hp+24,player.maxhp);
+player.hp=Math.min(player.hp+26,player.maxhp)
 show("Ты выпил зелье.",[{text:"Назад",action:back}])
 }
 
-// ================= LOOT ===================
+// ================= BASE LOOT ===================
 function baseLoot(){
-player.gold+=Math.floor(Math.random()*35)+25;
-player.xp+=10;
-levelUp();
+player.gold+=Math.floor(Math.random()*45)+35
+player.xp+=12
+levelUp()
 }
 
+// ================= DROPS ===================
 function drop(zone){
-let r=Math.random();
+let r=Math.random()
 if(zone==="forest"){
-if(r<.4)player.inventory.wolfSkin++
+if(r<.4)player.inventory.wolf++
 else player.inventory.fang++
 }
 if(zone==="cave"){
-if(r<.4)player.inventory.darkEss++
+if(r<.4)player.inventory.ess++
 else if(r<.7)player.inventory.ore++
 else player.inventory.relic++
 }
 }
 
+// ================= COMPANION BUFF ===================
+function companionBonus(dmg){
+if(player.companion==="Наёмник") dmg+=3
+if(player.companion==="Маг ученик") player.mana = Math.min(player.mana+2,player.maxmana)
+return dmg
+}
+
+// ================= SKILLS ===================
+function skillBonus(dmg){
+if(player.skill==="Воин") dmg+=3
+if(player.skill==="Ассасин" && Math.random()>.7) dmg+=10
+if(player.skill==="Маг" && player.mana>=4){
+player.mana-=4
+dmg+=8
+}
+return dmg
+}
+
 // ================= BATTLE ===================
 function battle(enemy,img,zone,onWin){
-let dmg=player.damage+player.strength;
-enemy.hp-=dmg;
+let dmg=player.damage+player.strength
+dmg = skillBonus(dmg)
+dmg = companionBonus(dmg)
+
+enemy.hp-=dmg
 
 let t=`<img class="scene" src="${img}">
 ${enemy.name}
@@ -129,25 +152,26 @@ HP:${enemy.hp<0?0:enemy.hp}
 Ты наносишь ${dmg}`
 
 if(enemy.hp<=0){
-drop(zone);
-baseLoot();
-onWin();
-return;
+drop(zone)
+baseLoot()
+onWin()
+return
 }
 
-let hit=Math.max(enemy.damage-(player.armor+player.helmet),0)
-player.hp-=hit;
-t+=`\nВраг бьёт ${hit}`;
+let defense = player.armor+player.helmet
+let hit=Math.max(enemy.damage-defense,0)
+player.hp-=hit
+t+=`\nВраг бьёт ${hit}`
 
 if(player.hp<=0){
-show("Ты пал…",{text:"Заново",action:newGame});
-return;
+show("Последнее, что ты слышишь — как город вздыхает без тебя…",{text:"Заново",action:newGame})
+return
 }
 
 show(t,[
 {text:"Биться",action:()=>battle(enemy,img,zone,onWin)},
 {text:"Зелье",action:()=>usePotion(()=>battle(enemy,img,zone,onWin))},
-{text:"Сбежать",action:start}
+{text:"Бежать",action:start}
 ])
 }
 
@@ -155,31 +179,34 @@ show(t,[
 function start(){
 show(`
 <img class="scene" src="https://images.unsplash.com/photo-1614854262340-9f51e96f7f04?auto=format&fit=crop&w=1200&q=60">
-Город уже живёт своей жизнью. Банды, тайные силы, боссы и судьба переплелись.`,
+Город больше, чем кажется. Теперь он живёт судьбой, магией, кровью и золотом.`,
 [
 {text:"Город",action:city},
-{text:"Районы",action:newDistricts},
-{text:"Банда города",action:banditFaction},
-{text:"Кузнец (квесты)",action:blacksmith},
+{text:"Районы",action:urban},
+{text:"Гильдия Магов",action:mages},
+{text:"Банда города",action:bandits},
+{text:"Кузнец",action:blacksmith},
+{text:"Спутники",action:companions},
+{text:"Навыки боя",action:skills},
 {text:"Лес (лут)",action:forest},
-{text:"Пещеры (лут)",action:cave},
-{text:"Главный рынок",action:market},
+{text:"Пещеры (лут)",action:caves},
+{text:"Большой рынок",action:market},
 {text:"БОССЫ",action:bossMenu}
 ])
 }
 
-// ================= CITY ===================
+// ===================== CITY =====================
 function city(){
-show("Город полон жизни и боли.",[
+show("Город шумит, шепчет и ненавидит.",[
 {text:"Пристань",action:docks},
-{text:"Переулки",action:alleys},
 {text:"Площадь",action:plaza},
+{text:"Переулки",action:alleys},
 {text:"Назад",action:start}
 ])
 }
 
-// ================= NEW DISTRICTS ===================
-function newDistricts(){
+// ===================== DISTRICTS =====================
+function urban(){
 show("Новые районы ждут.",[
 {text:"Священный квартал",action:holy},
 {text:"Район знати",action:rich},
@@ -188,30 +215,167 @@ show("Новые районы ждут.",[
 ])
 }
 
-function holy(){
-if(Math.random()>.5){
-player.maxhp+=5;
-show("Священная сила укрепляет тебя.",[{text:"Назад",action:newDistricts}])
-}else show("Холод тишины.",[{text:"Назад",action:newDistricts}])
+// ===================== MAGES =====================
+function mages(){
+if(!player.mageRank){
+show("— Мы следим за миром. Вступишь — станешь его частью.",
+[
+{text:"Вступить",action:()=>{player.mageRank="Ученик";player.mana+=6;start()}},
+{text:"Уйти",action:start}
+])
+return
 }
 
-function rich(){
-show("Здесь пахнет золотом и страхом.",[{text:"Назад",action:newDistricts}])
+if(player.mageRank==="Ученик"){
+if(player.inventory.ess<2){
+show("Принеси 2 эссенции тьмы из пещер.",[{text:"Назад",action:start}])
+}else{
+player.inventory.ess-=2
+player.mageRank="Маг круга"
+player.maxmana+=10
+show("Теперь ты — часть великой силы.",[{text:"Назад",action:start}])
+}
+return
 }
 
-function barracks(){
-if(Math.random()>.6){
-battle({name:"Агрессивный страж",hp:44,damage:14},
-"https://images.unsplash.com/photo-1473093295043-cdd812d0e601",
-"city",
-()=>show("Ты ушёл живым.",[{text:"Назад",action:newDistricts}]))
-}else show("Стража пока игнорирует тебя.",[{text:"Назад",action:newDistricts}])
+show("Маги наблюдают. И ждут.",[{text:"Назад",action:start}])
 }
 
-// ================= BANDIT FACTION ===================
-function banditFaction(){
+// ===================== COMPANIONS =====================
+function companions(){
+if(player.companion){
+show("Твой спутник с тобой.",[{text:"Назад",action:start}])
+return
+}
+
+show("Кто будет рядом?",
+[
+{text:"Нанять наёмника (150 золота)",action:()=>{
+if(player.gold>=150){player.gold-=150;player.companion="Наёмник";start()}
+else show("Недостаточно золота.",[{text:"Назад",action:companions}])}},
+{text:"Маг ученик (200 золота)",action:()=>{
+if(player.gold>=200){player.gold-=200;player.companion="Маг ученик";start()}
+else show("Нет денег.",[{text:"Назад",action:companions}])}},
+{text:"Уйти",action:start}
+])
+}
+
+// ===================== SKILLS =====================
+function skills(){
+if(player.skill){
+show("Ты уже выбрал путь.",[{text:"Назад",action:start}])
+return
+}
+show("Выбери свой боевой стиль:",
+[
+{text:"ВОИН — больше урона",action:()=>{player.skill="Воин";start()}},
+{text:"АССАСИН — шанс дикого удара",action:()=>{player.skill="Ассасин";start()}},
+{text:"МАГ — мощные магические удары",action:()=>{player.skill="Маг";start()}},
+{text:"Назад",action:start}
+])
+}
+
+// ===================== MARKET =====================
+function market(){
+show("Рынок стал огромным.",[
+{text:"Оружейник",action:smith},
+{text:"Бронник",action:armorShop},
+{text:"Алхимик",action:alchemist},
+{text:"Торговые квесты",action:marketQuests},
+{text:"Продать трофеи",action:sellLoot},
+{text:"Назад",action:start}
+])
+}
+
+// ===================== MARKET QUESTS =====================
+function marketQuests(){
+if(player.marketQuest===0){
+show("— Хочешь заработать? Докажи, что ты не пустое место.",
+[
+{text:"Взять заказ",action:()=>{player.marketQuest=1;start()}},
+{text:"Уйти",action:market}
+])
+return
+}
+
+if(player.marketQuest===1){
+if(player.inventory.wolf<2){
+show("Принеси 2 шкуры из леса.",[{text:"Назад",action:market}])
+}else{
+player.inventory.wolf-=2
+player.gold+=220
+player.marketQuest=2
+show("Хорошо. Ты надёжен.",[{text:"Назад",action:market}])
+}
+return
+}
+
+show("Торговцы теперь уважают тебя.",[{text:"Назад",action:market}])
+}
+
+// ===================== SELL LOOT =====================
+function sellLoot(){
+let gold=
+player.inventory.wolf*25+
+player.inventory.fang*40+
+player.inventory.ess*75+
+player.inventory.ore*50+
+player.inventory.relic*160;
+
+if(gold<=0){
+show("Продавать нечего.",[{text:"Назад",action:market}])
+return
+}
+
+player.gold+=gold
+player.inventory={wolf:0,fang:0,ess:0,ore:0,relic:0}
+show("Ты продал добычу и получил "+gold+" золота.",[{text:"Назад",action:market}])
+}
+
+// ===================== SHOPS =====================
+function smith(){
+show("— Я делаю оружие, которое меняет жизнь.",
+[
+{text:"Боевой меч — 180 золота",action:()=>{
+if(player.gold>=180){player.gold-=180;player.weapon="Боевой меч";player.damage=18;smith()}
+else show("Нет золота.",[{text:"Назад",action:smith}])}},
+{text:"Легендарный клинок — 360 золота",action:()=>{
+if(player.gold>=360){player.gold-=360;player.weapon="Легендарный клинок";player.damage=30;smith()}
+else show("Недостаточно.",[{text:"Назад",action:smith}])}},
+{text:"Назад",action:market}
+])
+}
+
+function armorShop(){
+show("— Хочешь жить — покупай броню.",
+[
+{text:"Тяжёлая броня — 280 золота",action:()=>{
+if(player.gold>=280){player.gold-=280;player.armor=8;player.armorName="Тяжёлая броня";armorShop()}
+else show("Нет денег.",[{text:"Назад",action:armorShop}])}},
+{text:"Шлем героя — 180 золота",action:()=>{
+if(player.gold>=180){player.gold-=180;player.helmet=5;player.helmetName="Шлем героя";armorShop()}
+else show("Нет денег.",[{text:"Назад",action:armorShop}])}},
+{text:"Назад",action:market}
+])
+}
+
+function alchemist(){
+show("Алхимик смотрит слишком внимательно.",
+[
+{text:"Зелье — 45 золота",action:()=>{
+if(player.gold>=45){player.gold-=45;player.potions++;alchemist()}
+else show("Нет денег.",[{text:"Назад",action:alchemist}])}},
+{text:"Редкое зелье — 110 золота",action:()=>{
+if(player.gold>=110){player.gold-=110;player.maxhp+=8;player.hp=player.maxhp;alchemist()}
+else show("Нет денег.",[{text:"Назад",action:alchemist}])}},
+{text:"Назад",action:market}
+])
+}
+
+// ===================== BANDITS =====================
+function bandits(){
 if(!player.banditRank){
-show("— Эй, герой. Хочешь жить по нашим правилам? Вступай в банду города.",
+show("— Хватит жить честно. Вступай в банду.",
 [
 {text:"Вступить",action:()=>{player.banditRank="Новичок";player.strength++;start()}},
 {text:"Уйти",action:start}
@@ -219,56 +383,37 @@ show("— Эй, герой. Хочешь жить по нашим правила
 return
 }
 
-show("Банда ждёт действий.",[
-{text:"Грабёж каравана",action:banditJob1},
-{text:"Нападение на знати",action:banditJob2},
-{text:"Большой налёт (опасно)",action:banditJob3},
+show("Банда даёт работу.",[
+{text:"Ограбление каравана",action:()=>banditJob(1)},
+{text:"Нападение на знать",action:()=>banditJob(2)},
+{text:"Большой налёт",action:()=>banditJob(3)},
 {text:"Назад",action:start}
 ])
 }
 
-function banditJob1(){
-if(Math.random()>.4){
-player.gold+=150;
-player.banditRank="Свой человек";
-show("Караван был лёгкой добычей.",[{text:"Назад",action:start}])
-}else{
-player.hp-=10;
-show("Стража вмешалась. Больно.",[{text:"Назад",action:start}])
+function banditJob(type){
+let chance=Math.random()
+if(type===1){
+if(chance>.4){player.gold+=170;player.banditRank="Свой";show("Лёгкие деньги.",[{text:"Назад",action:start}])}
+else{player.hp-=10;show("Стража вмешалась.",[{text:"Назад",action:start}])}
+}
+if(type===2){
+if(chance>.55){player.gold+=300;show("Золото знати — твоё.",[{text:"Назад",action:start}])}
+else{player.hp-=14;show("Ловушка.",[{text:"Назад",action:start}])}
+}
+if(type===3){
+if(player.banditRank!=="Свой"){show("Тебе не доверяют.",[{text:"Назад",action:start}]);return}
+if(chance>.6){player.gold+=450;player.banditRank="Легенда";show("Теперь ты часть истории.",[{text:"Назад",action:start}])}
+else{player.hp-=20;show("Ты почти погиб.",[{text:"Назад",action:start}])}
 }
 }
 
-function banditJob2(){
-if(Math.random()>.55){
-player.gold+=260;
-show("Ты сорвал куш.",[{text:"Назад",action:start}])
-}else{
-player.hp-=14;
-show("Ловушка знати. Ты выжил.",[{text:"Назад",action:start}])
-}
-}
-
-function banditJob3(){
-if(player.banditRank!=="Свой человек"){
-show("Тебя пока не допустили к этому делу.",[{text:"Назад",action:start}])
-return
-}
-if(Math.random()>.6){
-player.gold+=400;
-player.banditRank="Легенда районов"
-show("Теперь твоё имя шепчут.",[{text:"Назад",action:start}])
-}else{
-player.hp-=20;
-show("Ты был в шаге от смерти.",[{text:"Назад",action:start}])
-}
-}
-
-// ================= BLACKSMITH QUESTLINE ===================
+// ===================== BLACKSMITH QUEST =====================
 function blacksmith(){
 if(player.blacksmithQuest===0){
-show("— Я кузнец. Мне нужен помощник для дел, от которых пахнет смертью.",
+show("— Мне нужен человек не из трусливых.",
 [
-{text:"Помочь",action:()=>{player.blacksmithQuest=1;start()}},
+{text:"Помочь кузнецу",action:()=>{player.blacksmithQuest=1;start()}},
 {text:"Уйти",action:start}
 ])
 return
@@ -276,144 +421,72 @@ return
 
 if(player.blacksmithQuest===1){
 if(player.inventory.ore<2){
-show("Принеси мне 2 руды из пещер.",[{text:"Назад",action:start}])
+show("Принеси 2 руды.",[{text:"Назад",action:start}])
 }else{
-player.inventory.ore-=2;
-player.weapon="Меч мастера";
-player.damage=20;
-player.blacksmithQuest=2;
-show("— Хорошая работа. Держи оружие.",[{text:"Назад",action:start}])
+player.inventory.ore-=2
+player.weapon="Меч мастера"
+player.damage=22
+player.blacksmithQuest=2
+show("Теперь ты с оружием будущего.",[{text:"Назад",action:start}])
 }
 return
 }
 
-if(player.blacksmithQuest===2){
-show("— Скоро будет кое-что по-крупнее…",{text:"Назад",action:start})
-return
-}
+show("Кузнец готовит что-то великое.",[{text:"Назад",action:start}])
 }
 
-// ================= MARKET ===================
-function market(){
-show("Рынок стал огромным.",[
-{text:"Оружейник",action:smith},
-{text:"Бронник",action:armorShop},
-{text:"Алхимик",action:alchemist},
-{text:"Продать трофеи",action:sellLoot},
-{text:"Назад",action:start}
-])
-}
-
-function sellLoot(){
-let gold=
-player.inventory.wolfSkin*25+
-player.inventory.fang*40+
-player.inventory.darkEss*70+
-player.inventory.ore*45+
-player.inventory.relic*140;
-
-if(gold<=0){
-show("Продавать нечего.",[{text:"Назад",action:market}])
-return
-}
-
-player.gold+=gold;
-player.inventory={wolfSkin:0,fang:0,darkEss:0,ore:0,relic:0}
-show("Трофеи проданы. Ты получил "+gold+" золота.",[{text:"Назад",action:market}])
-}
-
-function smith(){
-show("— Я делаю оружие.",[
-{text:"Боевой меч — 160 золота",action:()=>{
-if(player.gold>=160){player.gold-=160;player.weapon="Боевой меч";player.damage=16;smith()}
-else show("Нет золота.",[{text:"Назад",action:smith}])}},
-{text:"Клинок легенд — 340 золота",action:()=>{
-if(player.gold>=340){player.gold-=340;player.weapon="Клинок легенд";player.damage=26;smith()}
-else show("Недостаточно.",[{text:"Назад",action:smith}])}},
-{text:"Назад",action:market}
-])
-}
-
-function armorShop(){
-show("— Я защищаю жизни.",[
-{text:"Тяжёлая броня — 260 золота",action:()=>{
-if(player.gold>=260){player.gold-=260;player.armor=7;player.armorName="Тяжёлая броня";armorShop()}
-else show("Нет денег.",[{text:"Назад",action:armorShop}])}},
-{text:"Шлем воина — 160 золота",action:()=>{
-if(player.gold>=160){player.gold-=160;player.helmet=4;player.helmetName="Шлем воина";armorShop()}
-else show("Нет денег.",[{text:"Назад",action:armorShop}])}},
-{text:"Назад",action:market}
-])
-}
-
-function alchemist(){
-show("Алхимик улыбается странно.",[
-{text:"Зелье — 40 золота",action:()=>{
-if(player.gold>=40){player.gold-=40;player.potions++;alchemist()}
-else show("Нет денег.",[{text:"Назад",action:alchemist}])}},
-{text:"Редкое зелье — 100 золота",action:()=>{
-if(player.gold>=100){player.gold-=100;player.maxhp+=7;player.hp=player.maxhp;alchemist()}
-else show("Нет денег.",[{text:"Назад",action:alchemist}])}},
-{text:"Назад",action:market}
-])
-}
-
-// ================= FOREST ===================
+// ===================== AREAS =====================
 function forest(){
-let enemies=[
-{name:"Волк",hp:30,damage:8},
-{name:"Теневой зверь",hp:40,damage:10},
-{name:"Лесной демон",hp:50,damage:12}
-]
-let e=enemies[Math.floor(Math.random()*enemies.length)]
+let e=[
+{name:"Волк",hp:32,damage:9},
+{name:"Теневой зверь",hp:44,damage:12},
+{name:"Лесной демон",hp:52,damage:14}
+][Math.floor(Math.random()*3)]
 battle(e,
 "https://images.unsplash.com/photo-1601758124099-1a3b66ca4d4a",
 "forest",
-()=>show("Лес смирился.",[{text:"Назад",action:start}]))
+()=>show("Лес принял твою силу.",[{text:"Назад",action:start}]))
 }
 
-// ================= CAVES ===================
-function cave(){
-let enemies=[
-{name:"Тварь тьмы",hp:42,damage:11},
-{name:"Демон глубин",hp:50,damage:13},
-{name:"Хранитель тьмы",hp:60,damage:15}
-]
-let e=enemies[Math.floor(Math.random()*enemies.length)]
+function caves(){
+let e=[
+{name:"Тварь тьмы",hp:46,damage:12},
+{name:"Демон глубин",hp:56,damage:14},
+{name:"Хранитель тьмы",hp:64,damage:16}
+][Math.floor(Math.random()*3)]
 battle(e,
 "https://images.unsplash.com/photo-1508193638397-1c437248f26a",
 "cave",
-()=>show("Пещеры бурчат твоё имя.",[{text:"Назад",action:start}]))
+()=>show("Глубины уважают тебя.",[{text:"Назад",action:start}]))
 }
 
-// ================= BOSSES ===================
+// ===================== BOSSES =====================
 function bossMenu(){
 show("Ты чувствуешь взгляд чудовищ.",[
-{text:"Босс — Лесной повелитель",action:bossForest},
-{text:"Босс — Владыка тьмы пещер",action:bossCave},
+{text:"Лесной Повелитель",action:forestBoss},
+{text:"Лорд Тьмы",action:caveBoss},
 {text:"Назад",action:start}
 ])
 }
 
-function bossForest(){
+function forestBoss(){
 battle(
-{name:"ЛЕСНОЙ КОРОЛЬ",hp:110,damage:18},
+{name:"ЛЕСНОЙ КОРОЛЬ",hp:130,damage:20},
 "https://images.unsplash.com/photo-1526325404140-2c243b7f97c8",
 "forest",
-()=>show("Лес больше не тот…",{text:"Назад",action:start})
+()=>show("Лес пал перед тобой.",[{text:"Назад",action:start}])
 )
 }
 
-function bossCave(){
+function caveBoss(){
 battle(
-{name:"ЛОРД ТЬМЫ",hp:140,damage:22},
+{name:"ВЛАДЫКА ТЬМЫ",hp:160,damage:24},
 "https://images.unsplash.com/photo-1608889175123-90c7f2ad653e",
 "cave",
-()=>show("Глубины замолчали.",[{text:"Назад",action:start}])
+()=>show("Тьма признала тебя.",[{text:"Назад",action:start}])
 )
 }
 
-start();
 </script>
 </body>
 </html>
