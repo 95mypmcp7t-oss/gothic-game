@@ -3,39 +3,45 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
-<title>Морас — прототип</title>
+<title>Морас — пиксельный прототип</title>
 <style>
-  html,body{height:100%;margin:0;background:#111;color:#eee;font-family:Arial, sans-serif}
-  #game{position:relative;margin:0 auto;background:#222;width:900px;height:600px;overflow:hidden;border:4px solid #444}
-  canvas{display:block;background:linear-gradient(#223,#112);width:900px;height:600px}
+  html,body{height:100%;margin:0;background:#0b0b0f;color:#eee;font-family:Arial, sans-serif}
+  #game{position:relative;margin:0 auto;background:#111;width:960px;height:640px;overflow:hidden;border:4px solid #333}
+  canvas{display:block;background:#1b1f2b;width:960px;height:640px}
   #ui{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
   #hud{position:absolute;left:8px;top:8px;color:#fff;pointer-events:auto}
-  #hud .stat{background:rgba(0,0,0,0.5);padding:6px;border-radius:4px;margin-bottom:6px}
-  #log{position:absolute;left:8px;bottom:8px;width:420px;max-height:180px;overflow:auto;background:rgba(0,0,0,0.5);padding:8px;border-radius:6px;font-size:13px}
+  #hud .stat{background:rgba(0,0,0,0.5);padding:6px;border-radius:4px;margin-bottom:6px;font-size:14px}
+  #log{position:absolute;left:8px;bottom:8px;width:440px;max-height:180px;overflow:auto;background:rgba(0,0,0,0.45);padding:8px;border-radius:6px;font-size:13px}
   #controls{position:absolute;right:8px;bottom:8px;display:flex;flex-wrap:wrap;gap:8px;pointer-events:auto}
-  .btn{width:64px;height:64px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;user-select:none;touch-action:none}
+  .btn{width:68px;height:68px;border-radius:10px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;user-select:none;touch-action:none}
   #menu{position:absolute;right:8px;top:8px;pointer-events:auto}
   #menu button{padding:6px 10px;margin-left:6px}
-  #panel{position:absolute;left:440px;top:8px;width:440px;height:240px;background:rgba(0,0,0,0.6);padding:8px;border-radius:6px;overflow:auto;pointer-events:auto;font-size:14px}
-  .npc{color:#ffea7f}
+  #panel{position:absolute;left:460px;top:8px;width:480px;height:260px;background:rgba(0,0,0,0.6);padding:10px;border-radius:6px;overflow:auto;pointer-events:auto;font-size:14px}
+  #questlog{position:absolute;left:460px;top:280px;width:480px;height:352px;background:rgba(0,0,0,0.6);padding:10px;border-radius:6px;overflow:auto;pointer-events:auto}
+  .npc{color:#ffd27f}
   .mob{color:#ff8a8a}
   .item{color:#8eeaff}
-  #questlog{position:absolute;left:440px;top:260px;width:440px;height:330px;background:rgba(0,0,0,0.6);padding:8px;border-radius:6px;overflow:auto;pointer-events:auto}
-  @media (max-width:920px){
+  #inv{margin-top:8px}
+  @media (max-width:980px){
     #game{width:100%;height:100vh}
     canvas{width:100%;height:100%}
     #panel,#questlog{display:none}
+  }
+  /* pixel-art font fallback */
+  @font-face{
+    font-family: 'PressStart2P';
+    src: local('Arial');
   }
 </style>
 </head>
 <body>
 <div id="game">
-  <canvas id="c" width="900" height="600"></canvas>
+  <canvas id="c" width="960" height="640"></canvas>
   <div id="ui">
     <div id="hud">
       <div class="stat">Игрок: <span id="pname">Ардин</span></div>
-      <div class="stat">Здоровье: <span id="hp">100</span> | Уровень: <span id="lvl">1</span></div>
-      <div class="stat">Репутация — Гильдия: <span id="rep_g">0</span> Контрабандисты: <span id="rep_s">0</span> Рекруты: <span id="rep_r">0</span></div>
+      <div class="stat">HP: <span id="hp">100</span> / <span id="maxhp">100</span> | ATK: <span id="atk">12</span> | Уровень: <span id="lvl">1</span></div>
+      <div class="stat">Золото: <span id="gold">100</span></div>
     </div>
     <div id="menu">
       <button id="saveBtn">Сохранить</button>
@@ -43,11 +49,14 @@
       <button id="resetBtn">Сброс</button>
     </div>
     <div id="panel">
-      <h3>Сюжет</h3>
-      <div id="story">Прибыв в Морас, вы ищете сестру Ардина. Ночью по морю приходят серебристые корабли и туман...</div>
+      <h3>Сюжет — Морас</h3>
+      <div id="story">Вы — Ардин. В Морасе появились серебристые корабли и туман. Ваша цель — найти следы сестры и разгадать тайну кристаллов.</div>
       <hr>
-      <div><strong>Рынок:</strong> продавец Торен — продаёт зелья и мечи.</div>
+      <div><strong>Рынок:</strong> Торен продаёт предметы.</div>
       <div id="market"></div>
+      <hr>
+      <div><strong>Инвентарь:</strong></div>
+      <div id="inv"></div>
     </div>
     <div id="questlog"><h3>Квесты</h3><div id="quests"></div></div>
     <div id="log"></div>
@@ -69,81 +78,101 @@
 </div>
 
 <script>
-/* Простая игровая логика — прототип */
+/*
+Пиксельный 2D-прототип в одном файле.
+Спрайты — встроенные небольшие изображения (dataURI) для NPC/мобов/предметов.
+*/
+
 const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext('2d', {alpha:false});
+ctx.imageSmoothingEnabled = false;
 
 const state = {
-  player: {x:450,y:300,w:20,h:28,hp:100,maxHp:100,lvl:1,xp:0,atk:12},
+  player: {x:480,y:320,w:20,h:28,hp:100,maxHp:100,lvl:1,xp:0,atk:12,speed:2},
   mobs: [],
   npcs: [],
   items: [],
   marketItems: [],
   quests: [],
-  map: {w:1800,h:1200},
+  inv: [],
+  map: {w:1920,h:1280},
   keys: {},
-  time:0,
-  logs: []
+  logs: [],
+  time:0
 };
 
-function log(s){ state.logs.unshift((new Date()).toLocaleTimeString()+ ' — ' + s); if(state.logs.length>8) state.logs.pop(); renderLog(); }
-function renderLog(){ document.getElementById('log').innerHTML = state.logs.map(l=>'&nbsp;'+l).join('<br>'); }
+function log(s){ state.logs.unshift((new Date()).toLocaleTimeString()+ ' — ' + s); if(state.logs.length>10) state.logs.pop(); renderLog(); }
+function renderLog(){ document.getElementById('log').innerHTML = '<div style="background:rgba(0,0,0,0.45);padding:8px;border-radius:6px;max-height:200px;overflow:auto;font-size:13px">'+state.logs.join('<br>')+'</div>'; }
+
+function dataImg(col){ // simple pixel square as dataURI
+  const cvs = document.createElement('canvas'); cvs.width=16; cvs.height=16; const g=cvs.getContext('2d'); g.fillStyle=col; g.fillRect(0,0,16,16);
+  return cvs.toDataURL();
+}
+
+const SPRITES = {
+  player: dataImg('#8eeaff'),
+  npc: dataImg('#ffd27f'),
+  mob: dataImg('#ff8a8a'),
+  market: dataImg('#3a3'),
+  item: dataImg('#8eeaff')
+};
 
 function spawnNPCs(){
   state.npcs = [
-    {id:'toren',name:'Торен (продавец)',x:520,y:260,w:20,h:28,dialog:'У меня есть зелья и мечи. Купи, если хочешь быть жив.'},
-    {id:'lina',name:'Лина (исследователь)',x:420,y:380,w:18,h:26,dialog:'Кристаллы пробуждают туман. Помоги собрать доказательства.'},
-    {id:'mayor',name:'Глашатай',x:700,y:200,w:22,h:30,dialog:'Морас в опасности. Возьмите квест: очистить окрестности.'}
+    {id:'toren',name:'Торен',x:520,y:260,w:20,h:28,dialog:'У меня есть зелья и мечи. Деньги — за товар.'},
+    {id:'lina',name:'Лина',x:420,y:380,w:18,h:26,dialog:'Кристаллы пробуждают туман. Найдите осколки.'},
+    {id:'mayor',name:'Глашатай',x:700,y:200,w:22,h:30,dialog:'Горожане боятся. Очистите окраины.'}
   ];
 }
 
 function spawnMarket(){
   state.marketItems = [
-    {id:'potion',name:'Зелье (+30 HP)',price:20,type:'consum',effect:{hp:30}},
-    {id:'sword1',name:'Короткий меч (+5 ATK)',price:50,type:'weapon',bonus:{atk:5}},
+    {id:'potion',name:'Зелье здоровья (+30)',price:20,type:'consum',effect:{hp:30},sprite:SPRITES.item},
+    {id:'sword1',name:'Короткий меч (+5 ATK)',price:70,type:'weapon',bonus:{atk:5},sprite:SPRITES.item},
+    {id:'map',name:'Карта острова',price:40,type:'quest',sprite:SPRITES.item}
   ];
   renderMarket();
 }
 
 function renderMarket(){
   const el = document.getElementById('market');
-  el.innerHTML = state.marketItems.map(it=>`<div class="item">${it.name} — ${it.price} зол. <button onclick="buy('${it.id}')">Купить</button></div>`).join('');
+  el.innerHTML = state.marketItems.map(it=>`<div style="margin:6px 0">${it.name} — ${it.price} зол. <button onclick="buy('${it.id}')">Купить</button></div>`).join('');
 }
 
 function buy(id){
   const it = state.marketItems.find(i=>i.id===id);
   if(!it) return;
-  // простая экономика: у игрока есть gold в localStorage
-  const gold = getPlayerData().gold||100;
-  if(gold < it.price){ log('Недостаточно золота'); return; }
-  setPlayerData({gold:gold-it.price});
-  state.items.push(it);
+  const pd = getPlayerData();
+  if((pd.gold||0) < it.price){ log('Недостаточно золота'); return; }
+  pd.gold -= it.price; setPlayerData(pd);
+  state.inv.push(it);
   log('Куплено: '+it.name);
+  renderInv();
   saveState();
 }
 
-function getPlayerData(){ const s = localStorage.getItem('ard_data'); return s?JSON.parse(s):{gold:100}; }
-function setPlayerData(o){ const cur = getPlayerData(); const nxt = {...cur,...o}; localStorage.setItem('ard_data',JSON.stringify(nxt)); renderHUD(); }
-
 function spawnMobs(){
   state.mobs = [
-    {id:1,name:'Призрак-бродяга',x:500,y:120,w:18,h:24,hp:30,atk:6},
-    {id:2,name:'Туманный волк',x:320,y:450,w:20,h:18,hp:24,atk:8},
-    {id:3,name:'Контрабандист',x:650,y:360,w:20,h:28,hp:40,atk:10}
+    {id:1,name:'Призрак',x:500,y:120,w:18,h:24,hp:30,atk:6},
+    {id:2,name:'Волк',x:320,y:450,w:20,h:18,hp:24,atk:8},
+    {id:3,name:'Наглый контрабандист',x:650,y:360,w:20,h:28,hp:40,atk:10}
   ];
 }
 
 function init(){
+  // initial data
   spawnNPCs(); spawnMarket(); spawnMobs();
-  // начальные квесты
   state.quests = [
-    {id:'q1',title:'Найти следы тумана',desc:'Поговорите с Линой у центра рынка.',status:'active',obj:{type:'talk',target:'lina'}},
-    {id:'q2',title:'Очистить окрестности',desc:'Убейте 2 моба у окраин Мораса.',status:'locked',obj:{type:'kill',target:'any',count:2,cur:0}}
+    {id:'q1',title:'Найти Лину',desc:'Поговорите с Линой у рынка.',status:'active',obj:{type:'talk',target:'lina'}},
+    {id:'q2',title:'Очистить окраины',desc:'Победите 2 врагов у окраин.',status:'locked',obj:{type:'kill',target:'any',count:2,cur:0}}
   ];
-  state.items = [];
+  // player persistent data
+  if(!localStorage.getItem('ard_data')) localStorage.setItem('ard_data',JSON.stringify({gold:100,rep_g:0,rep_s:0,rep_r:0}));
   loadState();
   bindControls();
   renderHUD();
+  renderQuests();
+  renderInv();
   loop();
 }
 
@@ -155,182 +184,228 @@ function loop(){
 
 function update(){
   state.time++;
-  // движение
-  const s = 2;
-  if(state.keys.up) state.player.y -= s;
-  if(state.keys.down) state.player.y += s;
-  if(state.keys.left) state.player.x -= s;
-  if(state.keys.right) state.player.x += s;
-  // mobs basic AI: move toward player if close
+  const p = state.player;
+  const sp = p.speed;
+  if(state.keys.up) p.y -= sp;
+  if(state.keys.down) p.y += sp;
+  if(state.keys.left) p.x -= sp;
+  if(state.keys.right) p.x += sp;
+  // keep within map
+  p.x = Math.max(20, Math.min(state.map.w-20, p.x));
+  p.y = Math.max(20, Math.min(state.map.h-20, p.y));
+  // mobs AI simple
   for(const m of state.mobs){
-    const dx = state.player.x - m.x, dy = state.player.y - m.y;
+    const dx = p.x - m.x, dy = p.y - m.y;
     const d = Math.hypot(dx,dy);
-    if(d < 220 && d>30){
-      m.x += (dx/d)*0.6;
-      m.y += (dy/d)*0.6;
-    }
-    // attack if very close
-    if(d <= 30 && state.time % 60 === 0){
-      state.player.hp -= m.atk;
-      log(m.name+' атакует! -'+m.atk+' HP');
-      if(state.player.hp<=0){ state.player.hp=0; log('Вы погибли. Нажмите Сброс чтобы начать заново.'); }
-      renderHUD();
-    }
+    if(d < 220 && d>30){ m.x += (dx/d)*0.5; m.y += (dy/d)*0.5; }
+    if(d <= 30 && state.time % 60 === 0){ p.hp -= m.atk; log(m.name+' наносит удар -'+m.atk+' HP'); if(p.hp<=0){ p.hp=0; log('Вы погибли. Сбросьте прогресс.'); } renderHUD(); }
   }
 }
 
 function draw(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  // camera center on player
-  const cam = {x:state.player.x - canvas.width/2, y:state.player.y - canvas.height/2};
-  // draw ground grid
-  ctx.fillStyle = '#334';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-  // draw a simple town: market area rectangle
-  function drawRect(x,y,w,h,color,txt){
-    ctx.fillStyle = color; ctx.fillRect(x-cam.x,y-cam.y,w,h);
-    if(txt){ ctx.fillStyle='#fff'; ctx.font='12px Arial'; ctx.fillText(txt,x+4-cam.x,y+14-cam.y); }
+  // camera centered on player
+  const cam = {x: state.player.x - canvas.width/2, y: state.player.y - canvas.height/2};
+  // background (tile-like)
+  ctx.fillStyle='#1b1f2b'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  // draw simple tiles: grass and paths
+  for(let gx = -1; gx < canvas.width/32+2; gx++){
+    for(let gy= -1; gy < canvas.height/32+2; gy++){
+      const tx = gx*32 - (cam.x%32);
+      const ty = gy*32 - (cam.y%32);
+      ctx.fillStyle = ((gx+gy)%2===0)?'#233033':'#2b3a36';
+      ctx.fillRect(tx,ty,32,32);
+    }
   }
-  drawRect(360,220,160,120,'#3a3','Рынок');
-  drawRect(680,160,120,160,'#553','Ратуша');
-  drawRect(200,100,140,140,'#444','Причал');
+  // draw town landmarks
+  drawRect(360,220,160,120,'#6b3','Рынок',cam);
+  drawRect(680,160,120,160,'#6a5','Ратуша',cam);
+  drawRect(200,100,140,140,'#445','Причал',cam);
+  // draw items on ground
+  for(const it of state.items){
+    drawSprite(it.sprite || SPRITES.item, it.x, it.y, 12, 12, cam);
+  }
   // draw NPCs
   for(const n of state.npcs){
-    ctx.fillStyle = '#ffea7f';
-    ctx.fillRect(n.x-cam.x - n.w/2, n.y-cam.y - n.h/2, n.w, n.h);
-    ctx.fillStyle='#000'; ctx.font='12px Arial'; ctx.fillText(n.name, n.x-cam.x - n.w/2, n.y-cam.y - n.h/2 - 6);
+    drawSprite(SPRITES.npc, n.x, n.y, n.w, n.h, cam);
+    drawText(n.name, n.x, n.y - 24, cam);
   }
   // draw mobs
   for(const m of state.mobs){
-    ctx.fillStyle = '#ff8a8a';
-    ctx.fillRect(m.x-cam.x - m.w/2, m.y-cam.y - m.h/2, m.w, m.h);
-    ctx.fillStyle='#fff'; ctx.font='11px Arial'; ctx.fillText(m.name, m.x-cam.x - m.w/2, m.y-cam.y - m.h/2 - 6);
+    drawSprite(SPRITES.mob, m.x, m.y, m.w, m.h, cam);
+    drawText(m.name, m.x, m.y - 20, cam);
   }
   // draw player
-  ctx.fillStyle = '#8eeaff';
-  ctx.fillRect(state.player.x-cam.x - state.player.w/2, state.player.y-cam.y - state.player.h/2, state.player.w, state.player.h);
-  ctx.fillStyle='#000'; ctx.font='12px Arial'; ctx.fillText('Вы', state.player.x-cam.x - state.player.w/2, state.player.y-cam.y - state.player.h/2 - 6);
-  // draw items on ground (none initially)
-  // mini markers for quest targets
+  drawSprite(SPRITES.player, state.player.x, state.player.y, state.player.w, state.player.h, cam);
+  drawText('Вы', state.player.x, state.player.y - 22, cam);
+  // quest markers
   for(const q of state.quests){
-    if(q.status==='active' && q.obj.type==='talk'){
+    if(q.status === 'active' && q.obj.type === 'talk'){
       const npc = state.npcs.find(n=>n.id===q.obj.target);
-      if(npc){
-        ctx.fillStyle='rgba(255,255,255,0.9)';
-        ctx.beginPath(); ctx.arc(npc.x-cam.x, npc.y-cam.y - 28,6,0,Math.PI*2); ctx.fill();
-      }
+      if(n){ ctx.fillStyle='rgba(255,255,255,0.9)'; circle(n.x - cam.x, n.y - cam.y - 36, 6); }
     }
   }
 }
 
+function drawRect(x,y,w,h,color,label,cam){
+  ctx.fillStyle=color; ctx.fillRect(x-cam.x, y-cam.y, w, h);
+  ctx.fillStyle='#fff'; ctx.font='12px Arial'; ctx.fillText(label, x - cam.x + 6, y - cam.y + 16);
+}
+
+function drawSprite(imgURI, x, y, w, h, cam){
+  const img = new Image(); img.src = imgURI;
+  ctx.drawImage(img, x-cam.x - w/2, y-cam.y - h/2, w, h);
+}
+
+function circle(x,y,r){ ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill(); }
+
+function drawText(text,x,y,cam){
+  ctx.fillStyle='#fff'; ctx.font='12px Arial'; ctx.fillText(text, x - cam.x - 10, y - cam.y);
+}
+
 function bindControls(){
-  // touch/button controls
-  const map = {up:'up',down:'down',left:'left',right:'right'};
+  // mobile buttons
   ['up','down','left','right'].forEach(k=>{
     const el = document.getElementById(k);
-    el.addEventListener('touchstart',e=>{ e.preventDefault(); state.keys[map[k]]=true; });
-    el.addEventListener('touchend',e=>{ e.preventDefault(); state.keys[map[k]]=false; });
-    el.addEventListener('mousedown',e=>{ state.keys[map[k]]=true; });
-    el.addEventListener('mouseup',e=>{ state.keys[map[k]]=false; });
-    el.addEventListener('mouseleave',e=>{ state.keys[map[k]]=false; });
+    el.addEventListener('touchstart',e=>{ e.preventDefault(); state.keys[k]=true; });
+    el.addEventListener('touchend',e=>{ e.preventDefault(); state.keys[k]=false; });
+    el.addEventListener('mousedown',()=>state.keys[k]=true);
+    el.addEventListener('mouseup',()=>state.keys[k]=false);
+    el.addEventListener('mouseleave',()=>state.keys[k]=false);
   });
-  // attack
-  document.getElementById('attack').addEventListener('click',()=>playerAttack());
   document.getElementById('attack').addEventListener('touchstart',e=>{ e.preventDefault(); playerAttack(); });
-  // interact
-  document.getElementById('interact').addEventListener('click',()=>interact());
+  document.getElementById('attack').addEventListener('click',()=>playerAttack());
   document.getElementById('interact').addEventListener('touchstart',e=>{ e.preventDefault(); interact(); });
-  // save/load/reset
+  document.getElementById('interact').addEventListener('click',()=>interact());
+  // menu
   document.getElementById('saveBtn').addEventListener('click',saveState);
   document.getElementById('loadBtn').addEventListener('click',loadState);
   document.getElementById('resetBtn').addEventListener('click',resetGame);
-  // desktop keys
-  window.addEventListener('keydown',e=>{ if(e.key==='w'||e.key==='W') state.keys.up=true; if(e.key==='s'||e.key==='S') state.keys.down=true; if(e.key==='a'||e.key==='A') state.keys.left=true; if(e.key==='d'||e.key==='D') state.keys.right=true; if(e.key===' ') playerAttack(); if(e.key==='e') interact(); });
-  window.addEventListener('keyup',e=>{ if(e.key==='w'||e.key==='W') state.keys.up=false; if(e.key==='s'||e.key==='S') state.keys.down=false; if(e.key==='a'||e.key==='A') state.keys.left=false; if(e.key==='d'||e.key==='D') state.keys.right=false; });
+  // keyboard
+  window.addEventListener('keydown',e=>{ if(e.key==='w') state.keys.up=true; if(e.key==='s') state.keys.down=true; if(e.key==='a') state.keys.left=true; if(e.key==='d') state.keys.right=true; if(e.key===' ') playerAttack(); if(e.key==='e') interact(); });
+  window.addEventListener('keyup',e=>{ if(e.key==='w') state.keys.up=false; if(e.key==='s') state.keys.down=false; if(e.key==='a') state.keys.left=false; if(e.key==='d') state.keys.right=false; });
 }
 
 function playerAttack(){
-  // simple melee: damage mobs within radius
   const range = 40;
-  let hit = false;
-  for(const m of state.mobs){
+  let hit=false;
+  for(const m of state.mobs.slice()){
     const d = Math.hypot(state.player.x - m.x, state.player.y - m.y);
     if(d <= range){
       m.hp -= state.player.atk;
       log('Вы ударили '+m.name+' -'+state.player.atk+' HP');
-      hit = true;
+      hit=true;
       if(m.hp<=0){
         log(m.name+' повержен');
-        // drop item occasionally
-        if(Math.random()<0.4){
-          const loot = {id:'shard',name:'Кристальный осколок',type:'quest'};
-          state.items.push(loot);
-          log('Получено: '+loot.name);
-        }
-        // increment quest kill counters
+        // drop chance
+        if(Math.random()<0.5){ const loot = {id:'shard',name:'Кристалл',type:'quest',sprite:SPRITES.item,x:m.x+10,y:m.y+6}; state.items.push(loot); log('Получено: '+loot.name); }
+        // quest progress
         for(const q of state.quests){
           if(q.status==='active' && q.obj.type==='kill'){
             q.obj.cur = (q.obj.cur||0)+1;
-            if(q.obj.cur >= q.obj.count){ q.status='complete'; log('Квест завершён: '+q.title); unlockNext(); }
+            if(q.obj.cur >= q.obj.count){ q.status='complete'; log('Квест завершён: '+q.title); onQuestComplete(q); }
           }
         }
         // remove mob
         state.mobs = state.mobs.filter(x=>x!==m);
       }
-      renderHUD();
+      renderHUD(); renderQuests();
     }
   }
-  if(!hit) log('Атака по воздуху...');
+  if(!hit) log('Атака ниасилила целей.');
 }
 
 function interact(){
-  // check nearby NPCs
+  // check NPCs
   for(const n of state.npcs){
     const d = Math.hypot(state.player.x - n.x, state.player.y - n.y);
     if(d < 40){
       log(n.name+': '+n.dialog);
-      // handle simple quest progression: if talk target matches
+      // quest talk
       for(const q of state.quests){
         if(q.status==='active' && q.obj.type==='talk' && q.obj.target===n.id){
           q.status='complete';
           log('Квест завершён: '+q.title);
-          // unlock next quest
-          const q2 = state.quests.find(x=>x.id==='q2');
-          if(q2) q2.status='active';
+          onQuestComplete(q);
+          // unlock next
+          const q2 = state.quests.find(x=>x.id==='q2'); if(q2) q2.status='active';
         }
       }
-      renderQuests();
-      renderHUD();
-      return;
+      renderQuests(); return;
     }
   }
-  log('Никого рядом для взаимодействия.');
+  // check items on ground
+  for(const it of state.items.slice()){
+    const d = Math.hypot(state.player.x - it.x, state.player.y - it.y);
+    if(d < 30){ state.items = state.items.filter(x=>x!==it); state.inv.push(it); log('Подобрали: '+it.name); renderInv(); saveState(); return; }
+  }
+  log('Никого рядом.');
+}
+
+function onQuestComplete(q){
+  if(q.id==='q1'){
+    // reward
+    const pd = getPlayerData(); pd.gold = (pd.gold||0) + 10; pd.rep_g = (pd.rep_g||0) + 1; setPlayerData(pd);
+    log('Награда: 10 золота. Репутация Гильдии +1.');
+    renderHUD();
+  }
+  if(q.id==='q2' && q.status==='complete'){
+    const pd = getPlayerData(); pd.gold = (pd.gold||0) + 30; setPlayerData(pd);
+    state.player.lvl += 1; state.player.maxHp += 12; state.player.hp = state.player.maxHp;
+    log('Награда: 30 золота. Вы повышены до уровня '+state.player.lvl);
+    renderHUD();
+  }
 }
 
 function renderHUD(){
   document.getElementById('hp').innerText = state.player.hp;
+  document.getElementById('maxhp').innerText = state.player.maxHp;
+  document.getElementById('atk').innerText = state.player.atk;
   document.getElementById('lvl').innerText = state.player.lvl;
-  document.getElementById('pname').innerText = 'Ардин';
   const pd = getPlayerData();
-  document.getElementById('rep_g').innerText = pd.rep_g||0;
-  document.getElementById('rep_s').innerText = pd.rep_s||0;
-  document.getElementById('rep_r').innerText = pd.rep_r||0;
+  document.getElementById('gold').innerText = pd.gold||0;
 }
 
 function renderQuests(){
   const el = document.getElementById('quests');
   el.innerHTML = state.quests.map(q=>{
-    const status = q.status;
-    let body = `<div><strong>${q.title}</strong> [${status}]<div style="font-size:13px">${q.desc}</div>`;
-    if(status==='active' && q.obj.type==='kill'){ body += `<div>Прогресс: ${q.obj.cur||0}/${q.obj.count}</div>`; }
-    body += '</div><hr>';
+    const s = q.status;
+    let body = `<div style="margin-bottom:8px"><strong>${q.title}</strong> [${s}]<div style="font-size:13px">${q.desc}</div>`;
+    if(q.obj.type==='kill' && s!=='locked'){ body += `<div>Прогресс: ${q.obj.cur||0}/${q.obj.count}</div>`; }
+    body += '</div>';
     return body;
   }).join('');
 }
 
+function renderInv(){
+  const el = document.getElementById('inv');
+  el.innerHTML = state.inv.map((it,idx)=>`<div style="margin:4px 0">${it.name} <button onclick="useItem(${idx})">Использовать</button></div>`).join('') || '<div>Пусто</div>';
+}
+
+function useItem(idx){
+  const it = state.inv[idx];
+  if(!it) return;
+  if(it.type==='consum'){
+    state.player.hp = Math.min(state.player.maxHp, state.player.hp + (it.effect.hp||0));
+    log('Использовано: '+it.name);
+    state.inv.splice(idx,1);
+    renderInv(); renderHUD(); saveState();
+  } else if(it.type==='weapon'){
+    state.player.atk += (it.bonus.atk||0);
+    log('Экипировано: '+it.name+' (+'+(it.bonus.atk||0)+' ATK)');
+    state.inv.splice(idx,1);
+    renderInv(); renderHUD(); saveState();
+  } else {
+    log('Нельзя использовать: '+it.name);
+  }
+}
+
+function getPlayerData(){ const s = localStorage.getItem('ard_data'); return s?JSON.parse(s):{gold:100}; }
+function setPlayerData(o){ const cur = getPlayerData(); const nxt = {...cur,...o}; localStorage.setItem('ard_data',JSON.stringify(nxt)); renderHUD(); }
+
 function saveState(){
   const save = {
     player: state.player,
+    inv: state.inv,
     items: state.items,
     quests: state.quests,
     mobs: state.mobs,
@@ -338,65 +413,46 @@ function saveState(){
     market: state.marketItems,
     pdata: getPlayerData()
   };
-  localStorage.setItem('ard_save', JSON.stringify(save));
+  localStorage.setItem('ard_save2', JSON.stringify(save));
   log('Игра сохранена');
 }
 
 function loadState(){
-  const s = localStorage.getItem('ard_save');
-  if(!s){ log('Сохранений не найдено.'); return; }
+  const s = localStorage.getItem('ard_save2');
+  if(!s){ log('Сохранений нет, продолжаем новый сеанс.'); renderHUD(); renderQuests(); renderInv(); return; }
   try{
     const save = JSON.parse(s);
     state.player = save.player || state.player;
+    state.inv = save.inv || state.inv;
     state.items = save.items || state.items;
     state.quests = save.quests || state.quests;
     state.mobs = save.mobs || state.mobs;
     state.npcs = save.npcs || state.npcs;
     state.marketItems = save.market || state.marketItems;
     if(save.pdata) localStorage.setItem('ard_data', JSON.stringify(save.pdata));
-    renderMarket();
-    renderHUD();
-    renderQuests();
+    renderMarket(); renderHUD(); renderQuests(); renderInv();
     log('Сохранение загружено');
   }catch(e){ log('Ошибка загрузки: '+e.message); }
 }
 
 function resetGame(){
-  if(!confirm('Сбросить прогресс?')) return;
-  localStorage.removeItem('ard_save');
+  if(!confirm('Сбросить и начать заново?')) return;
+  localStorage.removeItem('ard_save2');
   localStorage.removeItem('ard_data');
-  state.player = {x:450,y:300,w:20,h:28,hp:100,maxHp:100,lvl:1,xp:0,atk:12};
-  init();
+  state.player = {x:480,y:320,w:20,h:28,hp:100,maxHp:100,lvl:1,xp:0,atk:12,speed:2};
+  state.inv = [];
+  spawnNPCs(); spawnMarket(); spawnMobs();
+  state.quests = [
+    {id:'q1',title:'Найти Лину',desc:'Поговорите с Линой у рынка.',status:'active',obj:{type:'talk',target:'lina'}},
+    {id:'q2',title:'Очистить окраины',desc:'Победите 2 врагов у окраин.',status:'locked',obj:{type:'kill',target:'any',count:2,cur:0}}
+  ];
+  renderHUD(); renderQuests(); renderInv();
   log('Игра сброшена');
 }
 
-function unlockNext(){
-  // simple example: when q1 complete unlock q2 (done earlier), when q2 complete give reward
-  const q2 = state.quests.find(q=>q.id==='q2');
-  if(q2 && q2.status==='complete'){
-    log('Вы получили 30 золота и повыли уровнем.');
-    const pd = getPlayerData();
-    setPlayerData({gold:(pd.gold||100)+30, rep_g:(pd.rep_g||0)+1});
-    state.player.lvl += 1;
-    state.player.maxHp += 10;
-    state.player.hp = state.player.maxHp;
-    renderHUD();
-    renderQuests();
-  }
-}
-
-function loadStateOnStart(){
-  renderQuests();
-  renderMarket();
-  renderHUD();
-  renderLog();
-}
-
-function saveStateOnUnload(){ saveState(); }
-window.addEventListener('beforeunload',saveStateOnUnload);
+window.addEventListener('beforeunload', ()=>{ saveState(); });
 
 init();
-loadStateOnStart();
 </script>
 </body>
 </html>
