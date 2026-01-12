@@ -2,664 +2,438 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Каторжник — Шахта (текстовый прототип)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Каторжник — Шахта (моб, без звука)</title>
 <style>
-  :root{--bg:#0b0f14;--panel:#0f1620;--accent:#8eeaff;--muted:#9fb0bd}
-  body{margin:0;background:var(--bg);color:#e6f0f2;font-family:Inter,Arial,Helvetica,sans-serif;display:flex;justify-content:center;padding:12px}
-  #app{width:980px;max-width:98vw;background:#081117;border-radius:10px;border:2px solid #1b2730;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  :root{--bg:#071018;--panel:#0e161a;--accent:#8eeaff;--muted:#9fb0bd}
+  body{margin:0;background:var(--bg);color:#e6f6f8;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;padding:10px}
+  #app{width:100%;max-width:820px;background:#06121a;border-radius:10px;padding:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  header{display:flex;justify-content:space-between;align-items:center;gap:8px}
   header h1{margin:0;font-size:18px;color:var(--accent)}
-  #main{display:flex;gap:12px;margin-top:12px}
-  #left{flex:1;min-width:420px}
-  #right{width:360px}
-  .panel{background:var(--panel);padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.03);box-shadow:inset 0 1px 0 rgba(255,255,255,0.01)}
-  #story{height:360px;overflow:auto;line-height:1.45;padding:12px;font-size:15px}
-  #choices{margin-top:10px;display:flex;flex-direction:column;gap:8px}
-  button.choice{background:linear-gradient(180deg,#16323b,#0f272b);color:#eaf6fb;border:0;padding:10px;border-radius:8px;text-align:left;cursor:pointer;font-size:15px}
-  #right .stat{margin-bottom:8px}
-  #log{height:160px;overflow:auto;margin-top:8px;padding:8px;background:#061015;border-radius:6px;font-size:13px}
-  #inv{max-height:180px;overflow:auto;margin-top:8px}
-  .item-row{display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px dashed rgba(255,255,255,0.03)}
-  .btn-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  #main{display:flex;flex-direction:column;gap:10px;margin-top:10px}
+  .panel{background:var(--panel);padding:10px;border-radius:8px}
+  #story{min-height:180px;max-height:320px;overflow:auto;padding:8px;line-height:1.45}
+  #choices{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+  button.choice{background:linear-gradient(180deg,#16333a,#0f2728);color:#e6fbff;border:0;padding:12px;border-radius:8px;text-align:left;font-size:16px}
+  .hud{display:flex;gap:8px;flex-wrap:wrap;font-size:13px}
+  .hud div{background:#081217;padding:6px;border-radius:6px}
+  #invList{max-height:180px;overflow:auto;margin-top:8px}
+  .inv-row{display:flex;justify-content:space-between;align-items:center;padding:6px;border-bottom:1px dashed rgba(255,255,255,0.03)}
+  #controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .bigbtn{flex:1;padding:10px;border-radius:8px;border:0;background:#1a3a3f;color:#eaffff;font-size:15px}
+  .locbtn{padding:8px;border-radius:8px;border:0;background:#0f2a2e;color:#dff7fb}
   .small{font-size:13px;color:var(--muted)}
-  #controls{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
-  .touch{padding:10px 12px;background:#12333a;border-radius:8px;border:0;color:#eaffff;cursor:pointer}
+  footer{display:flex;justify-content:space-between;margin-top:10px;font-size:13px;color:var(--muted)}
   img.icon{width:36px;height:36px;border-radius:6px;vertical-align:middle;margin-right:8px}
-  footer{margin-top:12px;text-align:right;font-size:13px;color:var(--muted)}
-  @media (max-width:1000px){ #main{flex-direction:column} #right{width:100%} #story{height:320px} }
+  @media (min-width:700px){ #story{min-height:280px} }
 </style>
 </head>
 <body>
 <div id="app">
   <header>
-    <h1>Каторжник — Глава I: Шахта</h1>
-    <div id="hud" class="small"></div>
+    <h1>Каторжник — Шахта (без звука)</h1>
+    <div class="hud" id="hud">
+      <div id="hpDisp">HP:120</div>
+      <div id="stDisp">STA:100</div>
+      <div id="goldDisp">₿10</div>
+    </div>
   </header>
 
   <div id="main">
-    <div id="left">
-      <div id="story" class="panel"></div>
-      <div id="choices" class="panel"></div>
-      <div id="controls" class="panel"></div>
-    </div>
+    <div class="panel" id="story">Загрузка...</div>
 
-    <div id="right">
-      <div class="panel">
-        <div><strong>Персонаж</strong></div>
-        <div class="stat">Имя: <span id="pname">Каин</span></div>
-        <div class="stat">HP: <span id="hp">100</span>/<span id="maxhp">100</span></div>
-        <div class="stat">Выносливость: <span id="stam">100</span>/<span id="maxstam">100</span></div>
-        <div class="stat">ATK: <span id="atk">12</span> | Броня: <span id="armor">0</span></div>
-        <div class="stat">Золото: <span id="gold">0</span> | Руда: <span id="ore">0</span></div>
+    <div class="panel" id="choices"></div>
+
+    <div class="panel">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:space-between">
+        <div>
+          <button class="locbtn" onclick="goTo('Лагерь')">🏕 Лагерь</button>
+          <button class="locbtn" onclick="enterMine(1)">⬆ Верхний</button>
+          <button class="locbtn" onclick="enterMine(2)">↔ Средний</button>
+          <button class="locbtn" onclick="enterMine(3)">⬇ Нижний</button>
+        </div>
+        <div>
+          <button onclick="showInv()" class="locbtn">Инвентарь</button>
+          <button onclick="showQuests()" class="locbtn">Квесты</button>
+        </div>
       </div>
 
-      <div class="panel" style="margin-top:10px">
+      <div id="invPanel" style="margin-top:8px;display:none">
         <div><strong>Инвентарь</strong></div>
-        <div id="inv"></div>
-        <div class="btn-row">
-          <button id="btnUse" class="touch">Использовать</button>
-          <button id="btnEquip" class="touch">Экипировать</button>
-          <button id="btnDrop" class="touch">Выбросить</button>
+        <div id="invList"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="closeInv()" class="locbtn">Закрыть</button>
         </div>
       </div>
 
-      <div class="panel" style="margin-top:10px">
+      <div id="questsPanel" style="margin-top:8px;display:none">
         <div><strong>Квесты</strong></div>
-        <div id="quests" class="small" style="margin-top:6px"></div>
-      </div>
-
-      <div class="panel" style="margin-top:10px">
-        <div><strong>Журнал</strong></div>
-        <div id="log" class="small"></div>
-        <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
-          <button id="saveBtn" class="touch">Сохранить</button>
-          <button id="loadBtn" class="touch">Загрузить</button>
+        <div id="questsList" class="small"></div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="closeQuests()" class="locbtn">Закрыть</button>
         </div>
       </div>
     </div>
+
+    <div class="panel">
+      <div id="log" style="height:120px;overflow:auto" class="small"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px">
+        <div><button onclick="saveGame()" class="locbtn">Сохранить</button><button onclick="loadGame()" class="locbtn">Загрузить</button></div>
+        <div class="small">Управление тач-кнопками</div>
+      </div>
+    </div>
+
   </div>
 
-  <footer class="small">Прототип — один файл. Звуки короткие. Для ПК используйте клавиши: W/A/S/D — движение, E — взаимодействие, Q — использовать, F — экипировать, R — атаковать.</footer>
+  <footer class="small">Файл: один HTML. Без звука. Сохранение в браузере.</footer>
 </div>
 
 <script>
-/* ===== Прототип текстовой пошаговой игры — Шахта =====
-   Функции:
-   - диалоги с ветвлениями
-   - квесты: починка вентилятора, тайник ночников, кристалл
-   - боевка с выносливостью, уклонением, критами
-   - инвентарь и экипировка
-   - картинки (dataURI) и звуки (WebAudio/simple beeps)
-   - сохранение в localStorage
-*/
+/* Полный мобильный прототип — Шахта — без звуков */
 
-/* ---- Ресурсы (микро-иконки dataURI) ---- */
+/* Иконки dataURI (SVG) */
 const ICONS = {
-  player: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#8eeaff"/><text x="18" y="22" font-size="14" text-anchor="middle" fill="#001"/></svg>`),
-  npc: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#ffd27f"/><text x="18" y="22" font-size="14" text-anchor="middle" fill="#001">Н</text></svg>`),
-  ore: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#6b8f3b"/><circle cx="18" cy="18" r="8" fill="#b5e07a"/></svg>`),
-  crystal: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#2b2b4b"/><polygon points="18,6 28,26 8,26" fill="#b89cff"/></svg>`),
-  sword: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#c6c6c6"/><rect x="16" y="6" width="4" height="20" fill="#666"/><rect x="12" y="24" width="12" height="4" fill="#a67"/></svg>`),
-  potion: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#3b1f3f"/><circle cx="18" cy="18" r="9" fill="#ff6b6b"/></svg>`),
-  part: 'data:image/svg+xml;utf8,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="36" height="36"><rect width="36" height="36" rx="6" fill="#7d6f3f"/><rect x="8" y="14" width="20" height="8" fill="#c8b27a"/></svg>`)
+  player: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#8eeaff'/></svg>`),
+  torch: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#3b1f3f'/><circle cx='18' cy='18' r='8' fill='#ff6b6b'/></svg>`),
+  ore: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#5a7b3a'/><circle cx='18' cy='18' r='7' fill='#bfe07a'/></svg>`),
+  part: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#7d6f3f'/><rect x='6' y='14' width='24' height='8' fill='#c8b27a'/></svg>`),
+  crystal: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#2b2b4b'/><polygon points='18,6 28,26 8,26' fill='#b89cff'/></svg>`),
+  knife: 'data:image/svg+xml;utf8,'+encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect rx='6' width='36' height='36' fill='#c6c6c6'/><rect x='16' y='6' width='4' height='20' fill='#666'/></svg>`)
 };
 
-/* ---- простой звук (beep) через WebAudio ---- */
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx = null;
-function beep(freq=440,duration=0.08,vol=0.08){
-  if(!AudioCtx) return;
-  if(!audioCtx) audioCtx = new AudioCtx();
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
-  o.type='sine'; o.frequency.value = freq;
-  g.gain.value = vol;
-  o.connect(g); g.connect(audioCtx.destination);
-  o.start();
-  o.stop(audioCtx.currentTime + duration);
-}
-
-/* ---- Игровое состояние ---- */
+/* State */
 let state = {
-  player: {
-    name: 'Каин',
-    hp: 120, maxHp:120,
-    stam: 100, maxStam:100,
-    atk: 10,
-    armor: 0,
-    gold: 10,
-    ore: 0,
-    xp:0, lvl:1,
-    equip: {weapon:null, armor:null}
-  },
-  location: 'Рынок (Вход в шахту)',
-  quests: [],
-  inv: [],
-  flags: {fanBroken:true, foundCrystal:false, knowSecret:false},
-  time: 0
+  player: {hp:120,maxHp:120,st:100,maxSt:100,atk:10,armor:0,gold:10,ore:0},
+  inv: [
+    {id:'torch',name:'Факел',type:'consum',desc:'Освещает ход',qty:2,icon:ICONS.torch},
+    {id:'bread',name:'Хлеб',type:'consum',desc:'+20 выносливости',qty:2,icon:ICONS.player},
+    {id:'knife',name:'Нож',type:'weapon',atk:3,desc:'Простой нож',qty:1,icon:ICONS.knife}
+  ],
+  quests: [
+    {id:'q1',title:'Собрать руду',status:'active',progress:0,goal:5},
+    {id:'q2',title:'Починка вентилятора',status:'active',hasPart:false},
+    {id:'q3',title:'Тайник Ночников',status:'locked'}
+  ],
+  flags: {foundCrystal:false, handedDocs:false},
+  location: 'Лагерь',
+  mine: {level:0,tiles:[]},
+  inCombat:false,
+  currentMob:null,
+  logs:[]
 };
 
-/* ---- Инициализация стартовых квестов/инвентаря ---- */
-function setupStart(){
-  state.quests = [
-    {id:'q1',title:'Отработать смену',desc:'Собрать 5 единиц руды для склада.',status:'active',progress:0,goal:5},
-    {id:'q2',title:'Починка вентилятора',desc:'Найдите металлический клапан и принесите Торну.',status:'active'},
-    {id:'q3',title:'Тайник Ночников',desc:'Разузнайте о тайнике под средним уровнем.',status:'locked'}
-  ];
-  state.inv = [
-    {id:'torch',name:'Факел',type:'consum',desc:'Освещает тёмные ходы.',icon:ICONS.potion,qty:2},
-    {id:'bread',name:'Хлеб',type:'consum',desc:'Восстанавливает выносливость (+20).',icon:ICONS.ore,qty:2},
-    {id:'knife',name:'Нож',type:'weapon',atk:3,desc:'Простой нож',icon:ICONS.sword,qty:1}
-  ];
-  // give starter weapon equipped
-  state.player.equip.weapon = 'knife';
-}
-
-/* ---- UI элементы ---- */
-const storyEl = document.getElementById('story');
-const choicesEl = document.getElementById('choices');
-const controlsEl = document.getElementById('controls');
+/* UI refs */
+const story = document.getElementById('story');
+const choices = document.getElementById('choices');
+const invPanel = document.getElementById('invPanel');
+const invList = document.getElementById('invList');
+const questsPanel = document.getElementById('questsPanel');
+const questsList = document.getElementById('questsList');
 const logEl = document.getElementById('log');
-const invEl = document.getElementById('inv');
-const questsEl = document.getElementById('quests');
-const hudEl = document.getElementById('hud');
+const hpDisp = document.getElementById('hpDisp');
+const stDisp = document.getElementById('stDisp');
+const goldDisp = document.getElementById('goldDisp');
 
-function renderAll(){
-  renderStory(currentNode ? currentNode.text : defaultText());
-  renderChoices();
-  renderControls();
-  renderInv();
-  renderQuests();
-  renderHUD();
-  renderLog();
-}
+/* Helpers */
+function pushLog(s){ state.logs.unshift((new Date()).toLocaleTimeString()+' — '+s); if(state.logs.length>80) state.logs.pop(); logEl.innerHTML = state.logs.join('<br>'); }
+function updateHUD(){ hpDisp.innerText = `HP:${state.player.hp}`; stDisp.innerText = `STA:${state.player.st}`; goldDisp.innerText = `₿${state.player.gold}`; }
+function showChoices(list){ choices.innerHTML=''; list.forEach(ch=>{ const b=document.createElement('button'); b.className='choice'; b.innerText=ch.label; b.onclick=()=>{ ch.action(); }; choices.appendChild(b); }); }
 
-function renderHUD(){
-  hudEl.innerHTML = `${state.player.name} — HP:${state.player.hp}/${state.player.maxHp} | STA:${state.player.stam}/${state.player.maxStam} | ATK:${state.player.atk+weaponAtk()} | ARM:${state.player.armor} | Оре: ${state.player.ore} | Золото: ${state.player.gold}`;
-  document.getElementById('pname').innerText = state.player.name;
-  document.getElementById('hp').innerText = state.player.hp;
-  document.getElementById('maxhp').innerText = state.player.maxHp;
-  document.getElementById('stam').innerText = state.player.stam;
-  document.getElementById('maxstam').innerText = state.player.maxStam;
-  document.getElementById('atk').innerText = state.player.atk + weaponAtk();
-  document.getElementById('armor').innerText = state.player.armor;
-  document.getElementById('gold').innerText = state.player.gold;
-  document.getElementById('ore').innerText = state.player.ore;
-}
-
-function renderLog(){
-  logEl.innerHTML = logs.slice(0,50).map(l=>`<div>${l}</div>`).join('');
-}
-let logs = [];
-function log(msg){ logs.unshift((new Date()).toLocaleTimeString()+' — '+msg); if(logs.length>80) logs.pop(); renderLog(); beep(600,0.04,0.04); }
-
-/* ---- Inventory rendering and actions ---- */
+/* Inventory */
+function showInv(){ invPanel.style.display='block'; questsPanel.style.display='none'; renderInv(); }
+function closeInv(){ invPanel.style.display='none'; }
 function renderInv(){
-  invEl.innerHTML = '';
-  if(state.inv.length===0){ invEl.innerHTML = '<div class="small">Пусто</div>'; return; }
+  invList.innerHTML='';
+  if(state.inv.length===0){ invList.innerHTML='<div class="small">Инвентарь пуст</div>'; return; }
   state.inv.forEach((it,idx)=>{
-    const row = document.createElement('div'); row.className='item-row';
-    row.innerHTML = `<div style="display:flex;align-items:center"><img src="${it.icon||ICONS.potion}" class="icon"/> <div><strong>${it.name}</strong><div class="small">${it.desc}</div></div></div>
-                     <div style="text-align:right"><div class="small">x${it.qty||1}</div><div style="margin-top:6px"><button onclick="useItem(${idx})" class="touch">Использовать</button> <button onclick="equipItem(${idx})" class="touch">Экипировать</button></div></div>`;
-    invEl.appendChild(row);
+    const row = document.createElement('div'); row.className='inv-row';
+    row.innerHTML = `<div style="display:flex;align-items:center"><img class="icon" src="${it.icon||ICONS.player}" alt="i"/> <div><strong>${it.name}</strong><div class="small">${it.desc}</div></div></div>
+                     <div style="text-align:right"><div class="small">x${it.qty||1}</div>
+                     <div style="margin-top:6px"><button onclick="useItem(${idx})" class="locbtn">Использовать</button> <button onclick="equipItem(${idx})" class="locbtn">Экипировать</button> <button onclick="dropItem(${idx})" class="locbtn">Выбросить</button></div></div>`;
+    invList.appendChild(row);
   });
 }
-
-function findInv(id){ return state.inv.find(i=>i.id===id); }
-
 function useItem(idx){
   const it = state.inv[idx];
   if(!it) return;
   if(it.type==='consum'){
-    if(it.id==='bread'){ state.player.stam = Math.min(state.player.maxStam, state.player.stam + 20); it.qty--; log('Съеден хлеб. Выносливость +20'); }
-    else if(it.id==='torch'){ log('Вы используете факел — свет.'); it.qty--; state.flags.torchOn = true; }
-    else { log('Использование предмета: '+it.name); it.qty--; }
-    if(it.qty<=0) state.inv.splice(idx,1);
-    renderAll();
-  } else {
-    log('Этот предмет нельзя просто так использовать.');
-  }
+    if(it.id==='bread'){ state.player.st = Math.min(state.player.maxSt, state.player.st + 20); pushLog('Съеден хлеб: +20 выносливости'); }
+    if(it.id==='torch'){ pushLog('Факел зажжён. Освещает ходы.'); }
+    it.qty--; if(it.qty<=0) state.inv.splice(idx,1);
+    renderInv(); updateHUD();
+  } else pushLog('Нельзя использовать этот предмет прямо сейчас.');
 }
-
 function equipItem(idx){
   const it = state.inv[idx];
   if(!it) return;
-  if(it.type==='weapon'){ state.player.equip.weapon = it.id; log('Экипировано: '+it.name); }
-  else if(it.type==='armor'){ state.player.equip.armor = it.id; state.player.armor = it.armor || 0; log('Надета броня: '+it.name); }
-  else log('Неподходящий предмет для экипировки.');
-  renderAll();
+  if(it.type==='weapon'){ state.player.atk += it.atk||0; pushLog('Экипирован: '+it.name); it.qty--; if(it.qty<=0) state.inv.splice(idx,1); renderInv(); updateHUD(); }
+  else pushLog('Нельзя экипировать этот предмет.');
 }
-
-/* ---- Weapon helper ---- */
-function weaponAtk(){
-  const w = state.player.equip.weapon;
-  if(!w) return 0;
-  const it = state.inv.find(i=>i.id===w);
-  return it && it.atk ? it.atk : 0;
-}
-
-/* ---- Quests rendering ---- */
-function renderQuests(){
-  questsEl.innerHTML = '';
-  state.quests.forEach(q=>{
-    const s = `<div style="margin-bottom:6px"><strong>${q.title}</strong> [${q.status}]<div class="small">${q.desc}${q.goal?(' — '+(q.progress||0)+'/'+q.goal):''}</div></div>`;
-    questsEl.insertAdjacentHTML('beforeend', s);
-  });
-}
-
-/* ---- Диалоговая система: узлы ---- */
-let currentNode = null;
-
-const NODES = {
-  start: {
-    text: () => {
-      return `<p>Вы — бывший рудокоп, теперь каторжник на острове Кромли. Ваша первая смена в шахте началась. Ночью туман опускается низко, а старые коридоры хранят не только руду.</p>
-              <p>В лагере вас ждут Торн (старый рударь), Мира (коллега) и Эдрик (кузнец). Вам выдали кирку и карту штолен.</p>`;
-    },
-    choices: [
-      {t:'Пойти к Торну (спросить о работе)', next:'talk_torn'},
-      {t:'Пройти к шахтному входу', next:'enter_mine'},
-      {t:'Осмотреть рынок', next:'market'}
-    ]
-  },
-
-  talk_torn: {
-    text: `Торн сидит у костра, в руке старая кружка. Он смотрит на вас прищуренно.\nТорн: "Если хочешь выжить — учись копать и не лезь в дела, которые не понимаешь. Внизу — вентилятор сломался; без него работа опасна. Если найдёшь металлический клапан — помогу улучшить кирку."\n`,
-    choices: [
-      {t:'Принять поиск клапана', next:()=>{ startQuest('q2'); return 'torn_accept'; }},
-      {t:'Спросить про слухи о кристаллах', next:'torn_rumor'},
-      {t:'Вернуться', next:'start'}
-    ]
-  },
-
-  torn_accept: {
-    text: `Торн кивает: "Хорошо. Я знаю — один клапан валяется в заброшенной камере, там где старые проводки. Но осторожнее: бандиты любят те ходы."`,
-    choices: [
-      {t:'Идти к шахте', next:'enter_mine'},
-      {t:'Вернуться', next:'start'}
-    ]
-  },
-
-  torn_rumor: {
-    text: `Торн шепчет: "Говорят, внизу иногда светится странный камень. Нечто вроде кристалла. Люди, кто его трогал — не те. Держись подальше, но если найдёшь — принеси Лине или мне."`,
-    choices:[
-      {t:'Пойти в шахту', next:'enter_mine'},
-      {t:'Вернуться', next:'start'}
-    ]
-  },
-
-  market: {
-    text: `Рынок — узкие лавки и торговцы. Эдрик чинит инструменты. Ярн — торговец, возможно купит руду.\nЭдрик: "Могу улучшить кирку, если принесёшь мне детали (металлический клапан)."\n`,
-    choices:[
-      {t:'Поговорить с Эдриком (улучшение)', next:'talk_edrik'},
-      {t:'Вернуться', next:'start'}
-    ]
-  },
-
-  talk_edrik: {
-    text: `Эдрик приглядывается: "Деталь нужна — могу сделать кованую кирку. Принеси клапан, и я улучшу оружие. Или продай руду Яну (торговцу) — он платит неплохо."`,
-    choices:[
-      {t:'Обещать найти деталь', next:()=>{ startQuest('q2'); return 'start'; }},
-      {t:'Идти в шахту', next:'enter_mine'}
-    ]
-  },
-
-  enter_mine: {
-    text: `Вы стоите у входа в шахту. Темнеет, из глубины доносится гул. Пора спуститься.\nВы можете: пройти на Верхний уровень (легкий), Средний (рискованнее) или Нижний (глубоко, шанс найти кристалл).`,
-    choices:[
-      {t:'Спуститься на Верхний уровень', next:()=>{ enterLevel(1); return 'lvl1'; }},
-      {t:'Спуститься на Средний уровень', next:()=>{ enterLevel(2); return 'lvl2'; }},
-      {t:'Рискнуть и пойти в Нижний уровень', next:()=>{ enterLevel(3); return 'lvl3'; }},
-      {t:'Отступить в лагерь', next:'start'}
-    ]
-  },
-
-  lvl1: { text: ()=>`Вы на Верхнем уровне. Основная задача — собрать руду и привыкнуть к секциям. Слева — рельсы, справа — старые склады.`, choices: ()=>levelChoices(1) },
-  lvl2: { text: ()=>`Вы на Среднем уровне. В коридорах есть тайники и возможные заражённые участки.`, choices: ()=>levelChoices(2) },
-  lvl3: { text: ()=>`Вы в Нижних галереях. Воздух холодный, стены вибрируют. Где-то в глубине светится фиолетовый отблеск — кристалл.`, choices: ()=>levelChoices(3) },
-
-  after_mine: { text: ()=>`Вы вернулись на поверхность. Что дальше?`, choices:[
-    {t:'Пойти к Торну', next:'talk_torn'},
-    {t:'Продать руду Яну (если есть)', next:'sell_to_yan'},
-    {t:'Осмотреть инвентарь', next:()=>{ renderInv(); return 'start'; }}
-  ] },
-
-  sell_to_yan: {
-    text: ()=> {
-      const ores = state.player.ore;
-      if(ores>0){
-        const price = ores*6;
-        state.player.gold += price; state.player.ore = 0; log(`Вы продали ${ores} руды Яну за ${price} золота.`);
-        return `Вы продали ${ores} руды за ${price} зол.`;
-      } else return `У вас нет руды, чтобы продать.`;
-    },
-    choices: [{t:'Вернуться', next:'start'}]
-  },
-
-  found_crystal_choice: {
-    text: `Вы находите фрагмент кристалла: он светится и греет ладонь. Что делать?`,
-    choices:[
-      {t:'Забрать и отнести Торну', next:()=>{ state.flags.foundCrystal=true; state.player.ore+=0; log('Вы забрали кристалл.'); return 'after_find_crystal'; }},
-      {t:'Продать Яну (тайно)', next:()=>{ state.player.gold += 60; state.flags.foundCrystal=true; log('Вы продали фрагмент кристалла Яну.'); return 'after_find_crystal'; }},
-      {t:'Оставить на месте (предупредить Мире)', next:()=>{ state.flags.knowSecret=true; log('Вы оставили фрагмент и предупредили Миру.'); return 'after_find_crystal'; }}
-    ]
-  },
-
-  after_find_crystal: {
-    text: ()=>`Последствия нахождения кристалла начинают проявляться: в шахте появляются странные тени, некоторые работники жалуются на галлюцинации.`,
-    choices:[
-      {t:'Вернуться на поверхность', next:'after_mine'},
-      {t:'Продолжить исследовать глубже', next:()=>{ if(Math.random()<0.5){ enterLevel(3); return 'lvl3'; } else { enterLevel(2); return 'lvl2'; } }}
-    ]
-  },
-
-  fan_quest_finish: {
-    text: `Вы принесли Торну металлический клапан. Он благодарит и передаёт вам улучшённую кирку: +3 к атаке.`,
-    choices:[
-      {t:'Принять кирку', next: ()=>{ giveItem({id:'iron_pick',name:'Кованая кирка',type:'weapon',atk:3,desc:'Улучшенная кирка.'}); removeInv('part'); equipById('iron_pick'); startQuestComplete('q2'); return 'start'; }},
-      {t:'Отказаться', next:'start'}
-    ]
-  },
-
-  secret_treasure: {
-    text: `Мира ведёт вас в тайник Ночников: там склад редкой руды и документы. Вы можете помочь ей разделить добычу или передать документы Торну.`,
-    choices:[
-      {t:'Взять часть руды и уйти', next: ()=>{ state.player.ore += 3; state.player.gold += 20; log('Вы утащили часть руды.'); startQuestComplete('q3'); return 'start'; }},
-      {t:'Взять документы и отдать Торну (шанс на бунт)', next: ()=>{ state.flags.knowSecret=true; log('Вы отдали документы Торну. Возможен будущий бунт.'); startQuestComplete('q3'); return 'start'; }},
-      {t:'Отказаться и уйти', next:'start'}
-    ]
-  },
-
-  victory: {
-    text: `Первая смена окончена. Вы выжили и получили опыт. Это только начало.`,
-    choices:[{t:'Новая смена (сохранить прогресс)', next:()=>{ saveGame(); return 'start'; }}]
-  }
-};
-
-/* ---- Утилиты: диалог / ветвление ---- */
-function showNode(id){
-  const node = typeof id === 'string' ? NODES[id] : id;
-  if(!node){ console.warn('node not found', id); return; }
-  currentNode = {id: id, text: (typeof node.text === 'function' ? node.text() : node.text), choices: node.choices};
-  renderStory(currentNode.text);
-  renderChoices();
-}
-
-function renderStory(html){
-  storyEl.innerHTML = typeof html === 'function' ? html() : html;
-}
-
-function renderChoices(){
-  choicesEl.innerHTML = '';
-  if(!currentNode || !currentNode.choices) return;
-  const choices = typeof currentNode.choices === 'function' ? currentNode.choices() : currentNode.choices;
-  choices.forEach(ch=>{
-    const btn = document.createElement('button');
-    btn.className = 'choice';
-    btn.innerText = typeof ch.t === 'function' ? ch.t() : ch.t;
-    btn.onclick = ()=>{ handleChoice(ch); };
-    choicesEl.appendChild(btn);
-  });
-}
-
-function handleChoice(ch){
-  // next can be string, function (returning string), or execute function
-  let next = ch.next;
-  if(typeof next === 'function'){
-    const result = next();
-    if(typeof result === 'string') showNode(result);
-    else if(result && result.then) result.then(r=>showNode(r));
-    else renderAll();
-  } else if(typeof next === 'string'){
-    showNode(next);
-  } else renderAll();
-}
-
-/* ---- Quest helpers ---- */
-function startQuest(id){
-  const q = state.quests.find(x=>x.id===id);
-  if(q){ q.status='active'; log('Квест начат: '+q.title); renderQuests(); }
-}
-
-function startQuestComplete(id){
-  const q = state.quests.find(x=>x.id===id);
-  if(q){ q.status='complete'; log('Квест завершён: '+q.title); renderQuests(); }
-}
-
-/* ---- Inventory helpers ---- */
-function giveItem(it){
-  const exist = state.inv.find(x=>x.id===it.id);
-  if(exist){ exist.qty = (exist.qty||1) + (it.qty||1); }
-  else state.inv.push({...it, qty: it.qty||1});
-  renderInv();
-}
-
-function removeInv(id,count=1){
-  const idx = state.inv.findIndex(i=>i.id===id);
-  if(idx>=0){
-    state.inv[idx].qty -= count;
-    if(state.inv[idx].qty <= 0) state.inv.splice(idx,1);
-  }
-  renderInv();
-}
-
-function equipById(id){
-  const it = state.inv.find(i=>i.id===id);
+function dropItem(idx){
+  const it = state.inv[idx];
   if(!it) return;
-  if(it.type==='weapon') state.player.equip.weapon = id;
-  if(it.type==='armor'){ state.player.equip.armor = id; state.player.armor = it.armor||0; }
-  renderAll();
+  if(confirm('Выбросить '+it.name+'?')){ pushLog('Вы выбросили '+it.name); state.inv.splice(idx,1); renderInv(); }
 }
 
-/* ---- Events: Levels / Mine simulation ---- */
-let mine = {
-  level:1,
-  tiles:[], // simplified: array of objects {x,y,type}
-  generate(level){
-    this.level = level;
-    this.tiles = [];
-    // generate small number of ore and one crystal on deep level
-    const oreCount = level===1?6:level===2?10:14;
-    for(let i=0;i<oreCount;i++) this.tiles.push({type:'ore',id:'ore'+i});
-    if(level>=3) this.tiles.push({type:'crystal',id:'cryst1'});
-    // chance for part in medium
-    if(level===2) this.tiles.push({type:'part',id:'part1'});
-    // mobs
-    this.mobs = [];
-    const mobCount = level===1?3:level===2?5:7;
-    for(let i=0;i<mobCount;i++) this.mobs.push({id:'mob'+i,type: level>=3? 'shadow':'rat',hp:20+level*6,atk:4+level*2});
-    log('Сгенерирован уровень шахты: '+level);
-  },
-  exploreOne(){
-    if(this.tiles.length===0){ log('Похоже, здесь больше нет полезных мест.'); return null; }
-    return this.tiles.shift();
+/* Quests */
+function showQuests(){ questsPanel.style.display='block'; invPanel.style.display='none'; renderQuests(); }
+function closeQuests(){ questsPanel.style.display='none'; }
+function renderQuests(){ questsList.innerHTML = state.quests.map(q=>`<div style="margin-bottom:8px"><strong>${q.title}</strong> [${q.status}]<div class="small">${q.progress?('Прогресс: '+q.progress+'/'+q.goal):''}</div></div>`).join(''); }
+
+/* Locations & mine */
+function goTo(loc){
+  if(state.inCombat){ pushLog('Нельзя двигаться во время боя.'); return; }
+  state.location = loc;
+  invPanel.style.display='none';
+  questsPanel.style.display='none';
+  if(loc==='Лагерь'){ story.innerHTML = `<p>Вы в лагере. Торн и Мира неподалёку. Что делаете?</p>`; showChoices([
+    {label:'Поговорить с Торном', action: talkTorn},
+    {label:'Пойти к шахте', action: ()=>enterMineMenu()},
+    {label:'Поговорить с Эдриком (кузнец)', action: talkEdric}
+  ]); }
+  updateHUD();
+  pushLog('Вы в '+loc);
+}
+function enterMineMenu(){ showChoices([
+  {label:'Верхний уровень (безопасно)', action: ()=>enterMine(1)},
+  {label:'Средний уровень (рискованно)', action: ()=>enterMine(2)},
+  {label:'Нижний уровень (опасно, шанс кристаллов)', action: ()=>enterMine(3)},
+  {label:'Вернуться в лагерь', action: ()=>goTo('Лагерь')}
+]); }
+function enterMine(level){
+  state.mine.level = level; state.mine.tiles = [];
+  const oreCount = level===1?6:level===2?10:14;
+  for(let i=0;i<oreCount;i++) state.mine.tiles.push({type:'ore'});
+  if(level===2) state.mine.tiles.push({type:'part'});
+  if(level===3) state.mine.tiles.push({type:'crystal'});
+  story.innerHTML = `<p>Вы на уровне ${level} шахты. Темно и влажно.</p>`;
+  showChoices([
+    {label:'Искать руду / исследовать', action: exploreMine},
+    {label:'Искать бандитов/сражаться', action: startCombat},
+    {label:'Вернуться в лагерь', action: ()=>goTo('Лагерь')}
+  ]);
+  pushLog('Спуск в шахту: уровень '+level);
+}
+
+/* Explore mine */
+function exploreMine(){
+  if(state.mine.tiles.length===0){ pushLog('Больше здесь ничего не найти.'); return; }
+  const tile = state.mine.tiles.shift();
+  if(tile.type==='ore'){ state.player.ore +=1; pushLog('Вы нашли руду.'); checkQuestOre(); updateHUD(); }
+  else if(tile.type==='part'){ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Нужен для вентилятора',qty:1,icon:ICONS.part}); pushLog('Найден металлический клапан!'); }
+  else if(tile.type==='crystal'){ // choice
+    story.innerHTML = `<p>Перед вами светящийся фрагмент кристалла. Он излучает странное тепло.</p>`;
+    showChoices([
+      {label:'Забрать и отнести Торну', action: ()=>{ giveItem({id:'crystal',name:'Кристальный фрагмент',type:'quest',desc:'Опасен и ценен',qty:1,icon:ICONS.crystal}); state.flags.foundCrystal=true; pushLog('Кристалл взят.'); goTo('Лагерь'); }},
+      {label:'Продать Яну тайно', action: ()=>{ state.player.gold += 60; state.flags.foundCrystal=true; pushLog('Кристалл продан — +60 золота.'); goTo('Лагерь'); }},
+      {label:'Оставить на месте', action: ()=>{ pushLog('Вы оставили фрагмент на месте.'); goTo('Лагерь'); }}
+    ]);
   }
-};
-
-function enterLevel(l){
-  mine.generate(l);
-  state.location = 'Шахта: Уровень '+l;
-  // start exploring loop: show choices to "искать руду", "идти глубже/вверх", "вернуться"
-  showNode({ text: `Вы спускаетесь в Уровень ${l}. Вокруг темно и слышен гул вагонеток.`, choices: [
-    {t:'Искать руду/исследовать место', next: ()=>{ const found = mine.exploreOne(); if(!found){ log('Ничего не найдено.'); return 'after_mine'; } if(found.type==='ore'){ state.player.ore++; log('Найдена руда.'); checkQuestOre(); return 'enter_level_continue'; } if(found.type==='part'){ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Металлический клапан для вентилятора.',icon:ICONS.part,qty:1}); log('Найден металлический клапан!'); return 'enter_level_continue'; } if(found.type==='crystal'){ showNode('found_crystal_choice'); return null; } } },
-    {t:'Сразиться с бандитами/погонять тварей', next: ()=>{ return combatEncounter(); }},
-    {t:'Вернуться на поверхность', next: ()=>{ state.location='Рынок (Вход в шахту)'; return 'after_mine'; }}
-  ]});
+  renderInv();
 }
 
-/* helper node for continue in level */
-NODES['enter_level_continue'] = { text: ()=>`Вы можете продолжить исследовать уровень или вернуться.`, choices: [
-  {t:'Продолжить исследование', next: ()=>{ const found = mine.exploreOne(); if(!found){ log('Больше ничего не найдено.'); return 'after_mine'; } if(found.type==='ore'){ state.player.ore++; log('Найдена руда.'); checkQuestOre(); return 'enter_level_continue'; } if(found.type==='part'){ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Металлический клапан для вентилятора.',icon:ICONS.part,qty:1}); log('Найден металлический клапан!'); return 'enter_level_continue'; } if(found.type==='crystal'){ showNode('found_crystal_choice'); return null; } }},
-  {t:'Вернуться на поверхность', next:'after_mine'}
-] };
-
-/* ---- Combat system ---- */
-function combatEncounter(){
-  // pick a mob from mine.mobs
-  const mob = mine.mobs.length ? mine.mobs.shift() : {id:'wild',type:'rat',hp:18,atk:4};
-  // enter combat loop via node
-  currentCombat = {mob: {...mob}, turn:'player'};
-  showCombatNode();
-  return null;
-}
-let currentCombat = null;
-
-function showCombatNode(){
-  const mob = currentCombat.mob;
-  renderStory(`<strong>Бой:</strong> Вы против ${mob.type} (HP: ${mob.hp}). Ваш HP: ${state.player.hp}, Выносливость: ${state.player.stam}`);
-  choicesEl.innerHTML = '';
-  const atkBtn = document.createElement('button'); atkBtn.className='choice'; atkBtn.innerText = 'Атаковать'; atkBtn.onclick = ()=>{ playerAttack(); };
-  const defendBtn = document.createElement('button'); defendBtn.className='choice'; defendBtn.innerText = 'Уклониться (шанс)'; defendBtn.onclick = ()=>{ playerDodge(); };
-  const useBtn = document.createElement('button'); useBtn.className='choice'; useBtn.innerText = 'Использовать предмет'; useBtn.onclick = ()=>{ renderInv(); };
-  const fleeBtn = document.createElement('button'); fleeBtn.className='choice'; fleeBtn.innerText = 'Попытаться убежать'; fleeBtn.onclick = ()=>{ attemptFlee(); };
-  choicesEl.appendChild(atkBtn); choicesEl.appendChild(defendBtn); choicesEl.appendChild(useBtn); choicesEl.appendChild(fleeBtn);
+/* Combat */
+function startCombat(){
+  if(state.inCombat){ pushLog('Вы уже в бою.'); return; }
+  const lvl = state.mine.level || 1;
+  const mob = {name: lvl>=3? 'Теневик':'Рудная крыса',hp:28+lvl*6,atk:5+lvl*2};
+  state.currentMob = mob; state.inCombat = true;
+  story.innerHTML = `<p>Враг появился: <strong>${mob.name}</strong> (HP:${mob.hp}).</p>`;
+  showChoices([
+    {label:'Атаковать', action: playerAttack},
+    {label:'Уклониться', action: playerDodge},
+    {label:'Использовать предмет', action: ()=>{ showInv(); }},
+    {label:'Попытаться убежать', action: attemptFlee}
+  ]);
+  pushLog('Бой начался с '+mob.name);
 }
 
 function playerAttack(){
-  if(state.player.stam < 8){ log('Недостаточно выносливости для атаки.'); return; }
-  state.player.stam -= 8;
-  const base = state.player.atk + weaponAtk();
-  const crit = Math.random()<0.12;
-  const dmg = Math.max(1, Math.floor(base * (crit?1.8:1)));
-  currentCombat.mob.hp -= dmg;
-  log(`Вы ударили — ${dmg} урона${crit?' (критический)!':''}`);
-  beep(800,0.06,0.06);
-  if(currentCombat.mob.hp <= 0){ log('Враг повержен.'); // reward
-    const gold = 5 + Math.floor(Math.random()*8);
-    state.player.gold += gold;
-    if(Math.random()<0.5){ state.player.ore += 1; log('Найдена руда после боя.'); checkQuestOre(); }
-    log(`Получено ${gold} золота.`);
-    renderAll(); return;
-  }
-  // mob attacks
-  setTimeout(()=>mobAttack(),300);
-  renderAll();
+  if(state.player.st < 8){ pushLog('Недостаточно выносливости для атаки.'); return; }
+  state.player.st -= 8;
+  const base = state.player.atk;
+  const crit = Math.random() < 0.12;
+  const dmg = Math.floor(base * (crit?1.8:1)) + Math.floor(Math.random()*3);
+  state.currentMob.hp -= dmg;
+  pushLog(`Вы нанесли ${dmg} урона${crit?' (крит)!':''}`);
+  if(state.currentMob.hp <= 0){ pushLog('Враг повержен.'); const gold = 6 + Math.floor(Math.random()*8); state.player.gold += gold; if(Math.random()<0.5){ state.player.ore +=1; pushLog('Найдена руда после боя.'); checkQuestOre(); } endCombat(true); return; }
+  // mob hits back
+  setTimeout(()=>mobAttack(),250);
+  updateHUD();
 }
 
 function playerDodge(){
-  if(state.player.stam < 6){ log('Недостаточно выносливости для уклонения.'); return; }
-  state.player.stam -= 6;
+  if(state.player.st < 6){ pushLog('Недостаточно выносливости.'); return; }
+  state.player.st -= 6;
   const success = Math.random() < 0.5;
-  if(success){ log('Вам удалось уклониться от следующей атаки.'); currentCombat.mob.nextMiss=true; }
-  else { log('Уклонение не удалось.'); currentCombat.mob.nextMiss=false; setTimeout(()=>mobAttack(),300); }
-  renderAll();
+  if(success){ pushLog('Уклонение успешно, следующая атака противника промахнется.'); state.currentMob.nextMiss = true; }
+  else { pushLog('Уклонение не удалось — враг атакует.'); mobAttack(); }
+  updateHUD();
 }
 
 function mobAttack(){
-  const mob = currentCombat.mob;
-  if(mob.nextMiss){ log('Враг промахнулся.'); mob.nextMiss=false; renderAll(); return; }
+  const mob = state.currentMob;
+  if(mob.nextMiss){ pushLog('Враг промахнулся.'); mob.nextMiss=false; return; }
   const dmg = Math.max(1, mob.atk - Math.floor(state.player.armor/2));
   state.player.hp -= dmg;
-  log(`Враг наносит вам ${dmg} урона.`);
-  beep(320,0.06,0.05);
-  if(state.player.hp <= 0){ state.player.hp = 0; log('Вы потеряли сознание от ран. Конец смены.'); renderAll(); showDefeat(); return; }
-  renderAll();
+  pushLog(`${mob.name} наносит ${dmg} урона.`);
+  if(state.player.hp <= 0){ state.player.hp = 0; pushLog('Вы упали без сознания. Смена окончена.'); endCombat(false); return; }
+  updateHUD();
 }
 
 function attemptFlee(){
-  if(Math.random() < 0.5){ log('Вам удалось убежать от врага.'); showNode('enter_level_continue'); }
-  else { log('Побег не удался, враг контратакует!'); mobAttack(); }
+  if(Math.random() < 0.5){ pushLog('Вам удалось уйти.'); endCombat(false); } else { pushLog('Не удалось убежать!'); mobAttack(); }
 }
 
-/* ---- Defeat handling ---- */
-function showDefeat(){
-  choicesEl.innerHTML = '';
-  const r = document.createElement('button'); r.className='choice'; r.innerText='Сбросить прогресс'; r.onclick = ()=>{ resetGame(); };
-  const l = document.createElement('button'); l.className='choice'; l.innerText='Загрузить сохранение'; l.onclick = ()=>{ loadGame(); };
-  choicesEl.appendChild(r); choicesEl.appendChild(l);
+function endCombat(win){
+  state.inCombat = false; state.currentMob = null;
+  if(win){ pushLog('Бой окончен — вы победили.'); } else pushLog('Вы покинули бой.');
+  showChoices([{label:'Продолжить исследование на уровне', action: exploreMine},{label:'Вернуться в лагерь', action: ()=>goTo('Лагерь')}]);
+  updateHUD();
 }
 
-/* ---- Quest checks ---- */
+/* NPC dialogs */
+function talkTorn(){
+  story.innerHTML = `<p>Торн: "Старый вентилятор сломан. Найди клапан — я сделаю тебе улучшенную кирку."</p>`;
+  showChoices([
+    {label:'Принять квест (найти клапан)', action: ()=>{ state.quests.find(q=>q.id==='q2').status='active'; pushLog('Квест принят: Починка вентилятора'); }},
+    {label:'Показать найденный клапан', action: givePartToTorn},
+    {label:'Вернуться', action: ()=>goTo('Лагерь')}
+  ]);
+}
+function givePartToTorn(){
+  const idx = state.inv.findIndex(i=>i.id==='part');
+  if(idx===-1){ pushLog('У вас нет клапана.'); return; }
+  state.inv.splice(idx,1);
+  state.player.atk += 3;
+  state.quests.find(q=>q.id==='q2').status='complete';
+  pushLog('Вы отдали клапан. Торн улучшил вашу кирку: +3 ATK.');
+  updateHUD(); renderInv();
+}
+function talkEdric(){
+  story.innerHTML = `<p>Эдрик: "Если принесёшь мне клапан, могу улучшить инструменты. Также Яну нужна редкая руда."</p>`;
+  showChoices([
+    {label:'Пойти в шахту', action: ()=>enterMineMenu()},
+    {label:'Вернуться', action: ()=>goTo('Лагерь')}
+  ]);
+}
+function talkMira(){
+  story.innerHTML = `<p>Мира: "Я знаю где тайник Ночников. Поможешь отбить немного руды?"</p>`;
+  showChoices([
+    {label:'Согласиться помочь (риск)', action: ()=>{
+      state.quests.find(q=>q.id==='q3').status='active'; pushLog('Вы согласились помочь Мире. Квест тайника активирован.'); showChoices([{label:'Идти искать тайник', action: ()=>enterMine(2)},{label:'Отложить', action: ()=>goTo('Лагерь')}]);
+    }},
+    {label:'Отказаться', action: ()=>goTo('Лагерь')}
+  ]);
+}
+function talkYan(){
+  story.innerHTML = `<p>Ян: "Принесу деньги — готов купить редкую руду и кристаллы. Но молчим об этом."</p>`;
+  showChoices([
+    {label:'Продать руду', action: sellOreToYan},
+    {label:'Купить карту (30 золота)', action: buyMap},
+    {label:'Выйти', action: ()=>goTo('Лагерь')}
+  ]);
+}
+function sellOreToYan(){
+  if(state.player.ore<=0){ pushLog('Нет руды для продажи.'); return; }
+  const price = state.player.ore * 6;
+  state.player.gold += price;
+  pushLog(`Вы продали ${state.player.ore} руды за ${price} золота`);
+  state.player.ore = 0; updateHUD();
+}
+function buyMap(){
+  if(state.player.gold < 30){ pushLog('Недостаточно золота.'); return; }
+  state.player.gold -= 30; pushLog('Вы купили карту: подсказка, где тайник (в средних штольнях).'); state.flags.knowSecret = true; updateHUD();
+}
+
+/* Quest checks */
 function checkQuestOre(){
   const q = state.quests.find(x=>x.id==='q1');
-  if(q && q.status==='active'){
-    q.progress = (q.progress||0) + 1;
-    if(q.progress >= q.goal){ q.status='complete'; log('Квест выполнен: '+q.title); // give reward
-      state.player.gold += 25; state.player.xp += 10; log('+25 золота, +10 XP'); renderQuests();
-    }
+  if(q && q.status==='active'){ q.progress = (q.progress||0)+1; if(q.progress >= q.goal){ q.status='complete'; pushLog('Квест выполнен: '+q.title); state.player.gold += 30; pushLog('+30 золота'); updateHUD(); } }
+}
+
+/* Utility: give item */
+function giveItem(it){ const ex = state.inv.find(x=>x.id===it.id); if(ex) ex.qty += it.qty||1; else state.inv.push({...it}); renderInv(); pushLog('Получен предмет: '+it.name); }
+
+/* Save/load */
+function saveGame(){ localStorage.setItem('mine_save', JSON.stringify(state)); pushLog('Игра сохранена'); }
+function loadGame(){ const s = localStorage.getItem('mine_save'); if(!s){ pushLog('Сохранений нет'); return; } state = JSON.parse(s); renderInv(); updateHUD(); pushLog('Сохранение загружено'); showChoices([]); story.innerHTML='Загрузка...'; showLocation(state.location||'Лагерь'); }
+
+/* Start and helpers */
+function showLocation(loc){
+  if(loc==='Лагерь') goTo('Лагерь');
+  else goTo(loc);
+}
+function goTo(loc){
+  state.location = loc;
+  invPanel.style.display='none'; questsPanel.style.display='none';
+  if(loc==='Лагерь'){ story.innerHTML = `<p>Вы в лагере. Люди суетятся, Торн и Мира здесь.</p>`; showChoices([
+    {label:'Поговорить с Торном', action: talkTorn},
+    {label:'Поговорить с Мирой', action: talkMira},
+    {label:'Пойти к шахте', action: ()=>enterMineMenu()},
+    {label:'Поговорить с Яном (торговец)', action: talkYan}
+  ]); }
+  updateHUD();
+  pushLog('Вы в '+loc);
+}
+function enterMineMenu(){ showChoices([
+  {label:'Верхний уровень', action: ()=>enterMine(1)},
+  {label:'Средний уровень', action: ()=>enterMine(2)},
+  {label:'Нижний уровень', action: ()=>enterMine(3)},
+  {label:'Вернуться', action: ()=>goTo('Лагерь')}
+]); }
+
+function enterMine(level){
+  state.mine.level = level; state.mine.tiles = [];
+  const oreCount = level===1?6:level===2?10:14;
+  for(let i=0;i<oreCount;i++) state.mine.tiles.push({type:'ore'});
+  if(level===2) state.mine.tiles.push({type:'part'});
+  if(level===3) state.mine.tiles.push({type:'crystal'});
+  story.innerHTML = `<p>Вы на уровне ${level} шахты.</p>`;
+  showChoices([
+    {label:'Искать руду/исследовать', action: exploreMine},
+    {label:'Искать бандитов/сражаться', action: startCombat},
+    {label:'Вернуться в лагерь', action: ()=>goTo('Лагерь')}
+  ]);
+  pushLog('Спуск на уровень '+level);
+}
+
+function exploreMine(){
+  if(state.mine.tiles.length===0){ pushLog('Похоже, здесь больше ничего нет'); return; }
+  const tile = state.mine.tiles.shift();
+  if(tile.type==='ore'){ state.player.ore +=1; pushLog('Найдена руда'); checkQuestOre(); updateHUD(); }
+  else if(tile.type==='part'){ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Нужен для вентилятора',qty:1,icon:ICONS.part}); }
+  else if(tile.type==='crystal'){
+    story.innerHTML = `<p>Вы наткнулись на кристальный фрагмент. Что делать?</p>`;
+    showChoices([
+      {label:'Забрать и отнести Торну', action: ()=>{ giveItem({id:'crystal',name:'Кристальный фрагмент',type:'quest',desc:'Опасен и ценен',qty:1,icon:ICONS.crystal}); state.flags.foundCrystal=true; pushLog('Кристалл взят'); goTo('Лагерь'); }},
+      {label:'Продать Яну', action: ()=>{ state.player.gold += 60; state.flags.foundCrystal=true; pushLog('Кристалл продан +60 золота'); goTo('Лагерь'); }},
+      {label:'Оставить', action: ()=>{ pushLog('Кристалл оставлен'); goTo('Лагерь'); }}
+    ]);
   }
-  // if found part earlier and q2 active, auto complete when give to Torn
-  renderQuests();
+  renderInv();
 }
 
-/* ---- Interaction shortcuts ---- */
-document.getElementById('saveBtn').onclick = saveGame;
-document.getElementById('loadBtn').onclick = loadGame;
+/* Init */
+renderInv();
+renderQuests();
+updateHUD();
+pushLog('Начало. Вы проснулись в бараке.');
+goTo('Лагерь');
 
-/* ---- Simple dialog for placing players choices (modal-less) ---- */
-function renderControls(){
-  controlsEl.innerHTML = '';
-  const btn1 = document.createElement('button'); btn1.className='touch'; btn1.innerText='Осмотреть шинель'; btn1.onclick = ()=>{ log('Вы проверяете свою экипировку.'); renderAll(); };
-  const btn2 = document.createElement('button'); btn2.className='touch'; btn2.innerText='Инвентарь'; btn2.onclick = ()=>{ renderInv(); };
-  const btn3 = document.createElement('button'); btn3.className='touch'; btn3.innerText='Отдохнуть (+стам)'; btn3.onclick = ()=>{ restAction(); };
-  controlsEl.appendChild(btn1); controlsEl.appendChild(btn2); controlsEl.appendChild(btn3);
-}
+/* Expose functions for buttons */
+window.showInv = showInv;
+window.closeInv = closeInv;
+window.showQuests = showQuests;
+window.closeQuests = closeQuests;
+window.enterMine = enterMine;
+window.useItem = useItem;
+window.equipItem = equipItem;
+window.dropItem = dropItem;
+window.saveGame = saveGame;
+window.loadGame = loadGame;
 
-function restAction(){
-  state.player.stam = Math.min(state.player.maxStam, state.player.stam + 30);
-  log('Вы немного отдохнули. Выносливость восстановлена.');
-  renderAll();
-}
-
-/* ---- Save/Load/Reset ---- */
-function saveGame(){
-  const s = JSON.stringify(state);
-  localStorage.setItem('mine_ch1_state', s);
-  log('Игра сохранена.');
-}
-function loadGame(){
-  const s = localStorage.getItem('mine_ch1_state');
-  if(!s){ log('Сохранений не найдено.'); return; }
-  try{
-    state = JSON.parse(s);
-    log('Сохранение загружено.');
-    renderAll();
-  }catch(e){ log('Ошибка загрузки: '+e.message); }
-}
-function resetGame(){
-  if(!confirm('Сбросить прогресс и начать заново?')) return;
-  state = {
-    player: {name:'Каин', hp:120,maxHp:120,stam:100,maxStam:100,atk:10,armor:0,gold:10,ore:0,xp:0,lvl:1,equip:{weapon:'knife',armor:null}},
-    location:'Рынок (Вход в шахту)',
-    quests:[],
-    inv:[],
-    flags:{fanBroken:true,foundCrystal:false,knowSecret:false},
-    time:0
-  };
-  setupStart();
-  log('Новая игра начата.');
-  showNode('start');
-  renderAll();
-}
-
-/* ---- Helper: small initial UI and start ---- */
-setupStart();
-log('Вы проснулись в бараке. Первая смена начинается.');
-showNode('start');
-renderAll();
-
-/* ---- Expose some functions for inline buttons used in nodes ---- */
-window.giveItem = giveItem;
-window.equipById = equipById;
-window.startQuest = startQuest;
-window.startQuestComplete = startQuestComplete;
-
-/* ---- Minor cheats (development) ---- */
-window._addOre = ()=>{ state.player.ore +=1; checkQuestOre(); renderAll(); };
-window._addPart = ()=>{ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Металлический клапан.',icon:ICONS.part,qty:1}); renderAll(); };
-
-/* ---- Small keyboard shortcuts ---- */
-window.addEventListener('keydown',e=>{
-  if(e.key==='q') renderInv();
-  if(e.key==='f') restAction();
-  if(e.key==='r') { // quick explore one tile
-    const found = mine.exploreOne();
-    if(found){ if(found.type==='ore'){ state.player.ore++; log('Найдена руда (q).'); checkQuestOre(); } if(found.type==='part'){ giveItem({id:'part',name:'Металлический клапан',type:'part',desc:'Металлический клапан.',icon:ICONS.part,qty:1}); log('Найдена деталь (q).'); } if(found.type==='crystal'){ showNode('found_crystal_choice'); } } else log('Ничего не найдено.'); renderAll();
-  }
-});
-
-/* ---- End of file ---- */
+/* End of script */
 </script>
 </body>
 </html>
